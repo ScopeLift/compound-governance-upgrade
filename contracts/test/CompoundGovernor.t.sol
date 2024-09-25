@@ -5,7 +5,7 @@ import {Test, console2} from "forge-std/Test.sol";
 
 // TODO: implement actual CompoundGovernor tests.  This is just a placeholder to satisfy "forge test".
 contract CompoundGovernorTest is Test {
-  function test() public pure {
-    assertEq(true, true);
-  }
+    function test() public pure {
+        assertEq(true, true);
+    }
 }
