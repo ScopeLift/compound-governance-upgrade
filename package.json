@@ -28,7 +28,7 @@
     "eslint-plugin-import": "^2.27.5",
     "eslint-plugin-node": "^11.1.0",
     "eslint-plugin-prettier": "^4.2.1",
-    "hardhat": "^2.15.0",
+    "hardhat": "^2.22.12",
     "husky": "^8.0.3",
     "lint-staged": "^13.2.3",
     "prettier-plugin-solidity": "^1.1.3"
