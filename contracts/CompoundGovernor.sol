@@ -32,8 +32,7 @@ contract CompoundGovernor is
     GovernorPreventLateQuorumUpgradeable,
     OwnableUpgradeable
 {
-    /// @notice The number of votes in support of a proposal required in order for a quorum to be reached and for a vote
-    /// to succeed
+    /// @notice The number of votes supporting a proposal required for quorum for a vote to succeed
     /// TODO: This will be replaced as a settable quorum in a future PR.
     uint256 public constant quorumVotes = 400_000e18; // 400,000 = 4% of Comp
 
