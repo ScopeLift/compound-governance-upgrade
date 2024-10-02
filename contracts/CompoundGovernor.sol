@@ -91,13 +91,8 @@ contract CompoundGovernor is
         return GovernorPreventLateQuorumUpgradeable._castVote(_proposalId, _account, _support, _reason, _params);
     }
 
-    /// @dev Executes a proposal after it has been queued.
+    /// @inheritdoc GovernorTimelockControlUpgradeable
     /// @dev We override this function to resolve ambiguity between inherited contracts.
-    /// @param _proposalId The id of the proposal.
-    /// @param _targets A list of target addresses for calls to be made in the proposal.
-    /// @param _values A list of values (ETH) to be passed to the calls in the proposal.
-    /// @param _calldatas A list of calldata for the calls in the proposal.
-    /// @param _descriptionHash The hash of the description for the proposal.
     function _executeOperations(
         uint256 _proposalId,
         address[] memory _targets,
@@ -110,8 +105,7 @@ contract CompoundGovernor is
         );
     }
 
-    /// @dev returns executor address
-    /// @return address of the executor.
+    /// @inheritdoc GovernorTimelockControlUpgradeable
     function _executor()
         internal
         view
@@ -121,14 +115,8 @@ contract CompoundGovernor is
         return address(this);
     }
 
-    /// @dev Queues a proposal to be executed after it has succeeded.
+    /// @inheritdoc GovernorTimelockControlUpgradeable
     /// @dev We override this function to resolve ambiguity between inherited contracts.
-    /// @param _proposalId The id of the proposal.
-    /// @param _targets A list of target addresses for calls to be made in the proposal.
-    /// @param _values A list of values (ETH) to be passed to the calls in the proposal.
-    /// @param _calldatas A list of calldata for the calls in the proposal.
-    /// @param _descriptionHash The hash of the description for the proposal.
-    /// @return The id of the proposal.
     function _queueOperations(
         uint256 _proposalId,
         address[] memory _targets,
