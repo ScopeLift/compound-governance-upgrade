@@ -75,7 +75,7 @@ contract CompoundGovernor is
         uint256[] memory _values,
         bytes[] memory _calldatas,
         bytes32 _descriptionHash
-    ) internal virtual override(GovernorTimelockControlUpgradeable, GovernorUpgradeable) returns (uint256) {
+    ) internal virtual override(GovernorUpgradeable, GovernorTimelockControlUpgradeable) returns (uint256) {
         return GovernorTimelockControlUpgradeable._cancel(_targets, _values, _calldatas, _descriptionHash);
     }
 
@@ -87,7 +87,7 @@ contract CompoundGovernor is
         uint8 _support,
         string memory _reason,
         bytes memory _params
-    ) internal virtual override(GovernorPreventLateQuorumUpgradeable, GovernorUpgradeable) returns (uint256) {
+    ) internal virtual override(GovernorUpgradeable, GovernorPreventLateQuorumUpgradeable) returns (uint256) {
         return GovernorPreventLateQuorumUpgradeable._castVote(_proposalId, _account, _support, _reason, _params);
     }
 
@@ -104,7 +104,7 @@ contract CompoundGovernor is
         uint256[] memory _values,
         bytes[] memory _calldatas,
         bytes32 _descriptionHash
-    ) internal virtual override(GovernorTimelockControlUpgradeable, GovernorUpgradeable) {
+    ) internal virtual override(GovernorUpgradeable, GovernorTimelockControlUpgradeable) {
         return GovernorTimelockControlUpgradeable._executeOperations(
             _proposalId, _targets, _values, _calldatas, _descriptionHash
         );
@@ -135,7 +135,7 @@ contract CompoundGovernor is
         uint256[] memory _values,
         bytes[] memory _calldatas,
         bytes32 _descriptionHash
-    ) internal virtual override(GovernorTimelockControlUpgradeable, GovernorUpgradeable) returns (uint48) {
+    ) internal virtual override(GovernorUpgradeable, GovernorTimelockControlUpgradeable) returns (uint48) {
         return GovernorTimelockControlUpgradeable._queueOperations(
             _proposalId, _targets, _values, _calldatas, _descriptionHash
         );
@@ -183,7 +183,7 @@ contract CompoundGovernor is
         public
         view
         virtual
-        override(GovernorTimelockControlUpgradeable, GovernorUpgradeable)
+        override(GovernorUpgradeable, GovernorTimelockControlUpgradeable)
         returns (ProposalState)
     {
         return GovernorTimelockControlUpgradeable.state(_proposalId);
