@@ -108,10 +108,10 @@ contract CompoundGovernor is
     function _executor()
         internal
         view
-        override(GovernorTimelockCompoundUpgradeable, GovernorUpgradeable)
+        override(GovernorUpgradeable, GovernorTimelockCompoundUpgradeable)
         returns (address)
     {
-        return address(this);
+        return GovernorTimelockCompoundUpgradeable._executor();
     }
 
     /// @inheritdoc GovernorTimelockCompoundUpgradeable
