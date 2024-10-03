@@ -7,10 +7,9 @@ import {GovernorVotesUpgradeable} from
     "@openzeppelin/contracts-upgradeable/governance/extensions/GovernorVotesUpgradeable.sol";
 import {GovernorCountingSimpleUpgradeable} from
     "@openzeppelin/contracts-upgradeable/governance/extensions/GovernorCountingSimpleUpgradeable.sol";
-import {GovernorTimelockControlUpgradeable} from
-    "@openzeppelin/contracts-upgradeable/governance/extensions/GovernorTimelockControlUpgradeable.sol";
-import {TimelockControllerUpgradeable} from
-    "@openzeppelin/contracts-upgradeable/governance/TimelockControllerUpgradeable.sol";
+import {GovernorTimelockCompoundUpgradeable} from
+    "@openzeppelin/contracts-upgradeable/governance/extensions/GovernorTimelockCompoundUpgradeable.sol";
+import {ICompoundTimelock} from "@openzeppelin/contracts/vendor/compound/ICompoundTimelock.sol";
 import {GovernorSettingsUpgradeable} from
     "@openzeppelin/contracts-upgradeable/governance/extensions/GovernorSettingsUpgradeable.sol";
 import {GovernorPreventLateQuorumUpgradeable} from
@@ -26,7 +25,7 @@ import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 contract CompoundGovernor is
     Initializable,
     GovernorVotesUpgradeable,
-    GovernorTimelockControlUpgradeable,
+    GovernorTimelockCompoundUpgradeable,
     GovernorSettingsUpgradeable,
     GovernorCountingSimpleUpgradeable,
     GovernorPreventLateQuorumUpgradeable,
@@ -56,27 +55,27 @@ contract CompoundGovernor is
         uint32 _initialVotingPeriod,
         uint256 _initialProposalThreshold,
         IVotes _compAddress,
-        TimelockControllerUpgradeable _timelockAddress,
+        ICompoundTimelock _timelockAddress,
         uint48 _initialVoteExtension,
         address _initialOwner
     ) public initializer {
         __Governor_init(_name);
         __GovernorSettings_init(_initialVotingDelay, _initialVotingPeriod, _initialProposalThreshold);
         __GovernorVotes_init(_compAddress);
-        __GovernorTimelockControl_init(_timelockAddress);
+        __GovernorTimelockCompound_init(_timelockAddress);
         __GovernorPreventLateQuorum_init(_initialVoteExtension);
         __Ownable_init(_initialOwner);
     }
 
-    /// @inheritdoc GovernorTimelockControlUpgradeable
+    /// @inheritdoc GovernorTimelockCompoundUpgradeable
     /// @dev We override this function to resolve ambiguity between inherited contracts.
     function _cancel(
         address[] memory _targets,
         uint256[] memory _values,
         bytes[] memory _calldatas,
         bytes32 _descriptionHash
-    ) internal virtual override(GovernorUpgradeable, GovernorTimelockControlUpgradeable) returns (uint256) {
-        return GovernorTimelockControlUpgradeable._cancel(_targets, _values, _calldatas, _descriptionHash);
+    ) internal virtual override(GovernorUpgradeable, GovernorTimelockCompoundUpgradeable) returns (uint256) {
+        return GovernorTimelockCompoundUpgradeable._cancel(_targets, _values, _calldatas, _descriptionHash);
     }
 
     /// @inheritdoc GovernorPreventLateQuorumUpgradeable
@@ -91,7 +90,7 @@ contract CompoundGovernor is
         return GovernorPreventLateQuorumUpgradeable._castVote(_proposalId, _account, _support, _reason, _params);
     }
 
-    /// @inheritdoc GovernorTimelockControlUpgradeable
+    /// @inheritdoc GovernorTimelockCompoundUpgradeable
     /// @dev We override this function to resolve ambiguity between inherited contracts.
     function _executeOperations(
         uint256 _proposalId,
@@ -99,23 +98,23 @@ contract CompoundGovernor is
         uint256[] memory _values,
         bytes[] memory _calldatas,
         bytes32 _descriptionHash
-    ) internal virtual override(GovernorUpgradeable, GovernorTimelockControlUpgradeable) {
-        return GovernorTimelockControlUpgradeable._executeOperations(
+    ) internal virtual override(GovernorUpgradeable, GovernorTimelockCompoundUpgradeable) {
+        return GovernorTimelockCompoundUpgradeable._executeOperations(
             _proposalId, _targets, _values, _calldatas, _descriptionHash
         );
     }
 
-    /// @inheritdoc GovernorTimelockControlUpgradeable
+    /// @inheritdoc GovernorTimelockCompoundUpgradeable
     function _executor()
         internal
         view
-        override(GovernorTimelockControlUpgradeable, GovernorUpgradeable)
+        override(GovernorTimelockCompoundUpgradeable, GovernorUpgradeable)
         returns (address)
     {
         return address(this);
     }
 
-    /// @inheritdoc GovernorTimelockControlUpgradeable
+    /// @inheritdoc GovernorTimelockCompoundUpgradeable
     /// @dev We override this function to resolve ambiguity between inherited contracts.
     function _queueOperations(
         uint256 _proposalId,
@@ -123,8 +122,8 @@ contract CompoundGovernor is
         uint256[] memory _values,
         bytes[] memory _calldatas,
         bytes32 _descriptionHash
-    ) internal virtual override(GovernorUpgradeable, GovernorTimelockControlUpgradeable) returns (uint48) {
-        return GovernorTimelockControlUpgradeable._queueOperations(
+    ) internal virtual override(GovernorUpgradeable, GovernorTimelockCompoundUpgradeable) returns (uint48) {
+        return GovernorTimelockCompoundUpgradeable._queueOperations(
             _proposalId, _targets, _values, _calldatas, _descriptionHash
         );
     }
@@ -141,16 +140,16 @@ contract CompoundGovernor is
         return GovernorPreventLateQuorumUpgradeable.proposalDeadline(_proposalId);
     }
 
-    /// @inheritdoc GovernorTimelockControlUpgradeable
+    /// @inheritdoc GovernorTimelockCompoundUpgradeable
     /// @dev We override this function to resolve ambiguity between inherited contracts.
     function proposalNeedsQueuing(uint256 _proposalId)
         public
         view
         virtual
-        override(GovernorTimelockControlUpgradeable, GovernorUpgradeable)
+        override(GovernorTimelockCompoundUpgradeable, GovernorUpgradeable)
         returns (bool)
     {
-        return GovernorTimelockControlUpgradeable.proposalNeedsQueuing(_proposalId);
+        return GovernorTimelockCompoundUpgradeable.proposalNeedsQueuing(_proposalId);
     }
 
     /// @inheritdoc GovernorSettingsUpgradeable
@@ -165,16 +164,16 @@ contract CompoundGovernor is
         return GovernorSettingsUpgradeable.proposalThreshold();
     }
 
-    /// @inheritdoc GovernorTimelockControlUpgradeable
+    /// @inheritdoc GovernorTimelockCompoundUpgradeable
     /// @dev We override this function to resolve ambiguity between inherited contracts.
     function state(uint256 _proposalId)
         public
         view
         virtual
-        override(GovernorUpgradeable, GovernorTimelockControlUpgradeable)
+        override(GovernorUpgradeable, GovernorTimelockCompoundUpgradeable)
         returns (ProposalState)
     {
-        return GovernorTimelockControlUpgradeable.state(_proposalId);
+        return GovernorTimelockCompoundUpgradeable.state(_proposalId);
     }
 
     /// @notice Calculates the quorum size, excludes token delegated to the exclude address.
