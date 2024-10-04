@@ -5,8 +5,8 @@ import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Ini
 import {GovernorUpgradeable} from "@openzeppelin/contracts-upgradeable/governance/GovernorUpgradeable.sol";
 import {GovernorVotesUpgradeable} from
     "@openzeppelin/contracts-upgradeable/governance/extensions/GovernorVotesUpgradeable.sol";
-import {GovernorCountingSimpleUpgradeable} from
-    "@openzeppelin/contracts-upgradeable/governance/extensions/GovernorCountingSimpleUpgradeable.sol";
+import {GovernorCountingFractionalUpgradeable} from
+    "@openzeppelin/contracts-upgradeable/governance/extensions/GovernorCountingFractionalUpgradeable.sol";
 import {GovernorTimelockCompoundUpgradeable} from
     "@openzeppelin/contracts-upgradeable/governance/extensions/GovernorTimelockCompoundUpgradeable.sol";
 import {ICompoundTimelock} from "@openzeppelin/contracts/vendor/compound/ICompoundTimelock.sol";
@@ -27,7 +27,7 @@ contract CompoundGovernor is
     GovernorVotesUpgradeable,
     GovernorTimelockCompoundUpgradeable,
     GovernorSettingsUpgradeable,
-    GovernorCountingSimpleUpgradeable,
+    GovernorCountingFractionalUpgradeable,
     GovernorPreventLateQuorumUpgradeable,
     OwnableUpgradeable
 {
