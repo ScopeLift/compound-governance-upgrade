@@ -3,6 +3,8 @@
 pragma solidity 0.8.26;
 
 contract CompoundGovernorConstants {
+    // TODO: Verify these values are correct for launch of the CompoundGovernor
+
     // These constants are taken from the existing GovernorBravoDelegate contract.
 
     uint48 INITIAL_VOTING_DELAY = 13_140; // The delay before voting takes place, in blocks
