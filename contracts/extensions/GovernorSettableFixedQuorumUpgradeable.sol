@@ -61,7 +61,7 @@ abstract contract GovernorSettableFixedQuorumUpgradeable is Initializable, Gover
     /// @param _voteStart The timestamp of when voting starts for a given proposal.
     function quorum(uint256 _voteStart) public view override returns (uint256) {
         GovernorSettableFixedQuorumStorage storage $ = _getGovernorSettableFixedQuorumStorage();
-        return $._quorumCheckpoints.upperLookup(SafeCast.toUint32(_voteStart));
+        return $._quorumCheckpoints.upperLookupRecent(SafeCast.toUint32(_voteStart));
     }
 
     /// @notice A function to set quorum for the current block timestamp.
