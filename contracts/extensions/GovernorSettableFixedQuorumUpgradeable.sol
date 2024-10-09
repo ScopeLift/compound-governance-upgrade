@@ -69,6 +69,6 @@ abstract contract GovernorSettableFixedQuorumUpgradeable is Initializable, Gover
     function _setQuorum(uint224 _amount) internal {
         GovernorSettableFixedQuorumStorage storage $ = _getGovernorSettableFixedQuorumStorage();
         emit QuorumUpdated(quorum(block.timestamp), uint256(_amount));
-        $._quorumCheckpoints.push(SafeCast.toUint32(block.timestamp), _amount);
+        $._quorumCheckpoints.push(SafeCast.toUint32(clock()), _amount);
     }
 }
