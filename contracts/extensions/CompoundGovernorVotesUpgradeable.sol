@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.26;
+pragma solidity 0.8.26;
 
 import {GovernorUpgradeable} from "@openzeppelin/contracts-upgradeable/governance/GovernorUpgradeable.sol";
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
@@ -27,13 +27,13 @@ abstract contract CompoundGovernorVotesUpgradeable is Initializable, GovernorUpg
         }
     }
 
-    function __CompoundGovernorVotes_init(IComp tokenAddress) internal onlyInitializing {
-        __CompoundGovernorVotes_init_unchained(tokenAddress);
+    function __CompoundGovernorVotes_init(IComp _tokenAddress) internal onlyInitializing {
+        __CompoundGovernorVotes_init_unchained(_tokenAddress);
     }
 
-    function __CompoundGovernorVotes_init_unchained(IComp tokenAddress) internal onlyInitializing {
+    function __CompoundGovernorVotes_init_unchained(IComp _tokenAddress) internal onlyInitializing {
         CompoundGovernorVotesStorage storage $ = _getCompoundGovernorVotesStorage();
-        $._token = IComp(address(tokenAddress));
+        $._token = IComp(address(_tokenAddress));
     }
 
     /// @notice Returns the IComp token used for governance.
@@ -61,17 +61,17 @@ abstract contract CompoundGovernorVotesUpgradeable is Initializable, GovernorUpg
 
     /// @notice Retrieves the voting weight for a specific account at a given timepoint.
     /// @dev This function overrides the base _getVotes function to use Compound's getPriorVotes mechanism.
-    /// @param account The address of the account to check the voting weight for.
-    /// @param timepoint The block number at which to check the voting weight.
+    /// @param _account The address of the account to check the voting weight for.
+    /// @param _timepoint The block number at which to check the voting weight.
     /// @param /*params*/ Unused parameter, kept for compatibility with the base function signature.
     /// @return uint256 The voting weight of the account at the specified timepoint.
-    function _getVotes(address account, uint256 timepoint, bytes memory /*params*/ )
+    function _getVotes(address _account, uint256 _timepoint, bytes memory /*params*/ )
         internal
         view
         virtual
         override
         returns (uint256)
     {
-        return token().getPriorVotes(account, timepoint);
+        return token().getPriorVotes(_account, _timepoint);
     }
 }
