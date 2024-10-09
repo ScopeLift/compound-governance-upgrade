@@ -67,7 +67,7 @@ abstract contract GovernorSettableFixedQuorumUpgradeable is Initializable, Gover
     /// @notice A function to set quorum for the current block timestamp.
     /// @param _amount The quorum amount to checkpoint.
     function _setQuorum(uint256 _amount) internal {
-        uint32 _timepoint = SafeCast.toUint32(clock());
+        uint48 _timepoint = clock();
         GovernorSettableFixedQuorumStorage storage $ = _getGovernorSettableFixedQuorumStorage();
         emit QuorumUpdated(quorum(_timepoint), _amount);
         $._quorumCheckpoints.push(_timepoint, SafeCast.toUint208(_amount));
