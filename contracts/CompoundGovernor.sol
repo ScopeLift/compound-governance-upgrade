@@ -52,7 +52,7 @@ contract CompoundGovernor is
         uint32 _initialVotingPeriod,
         uint256 _initialProposalThreshold,
         IVotes _compAddress,
-        uint224 _quorumVotes,
+        uint256 _quorumVotes,
         ICompoundTimelock _timelockAddress,
         uint48 _initialVoteExtension,
         address _initialOwner

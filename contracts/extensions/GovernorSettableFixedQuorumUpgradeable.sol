@@ -11,11 +11,11 @@ import {Checkpoints} from "@openzeppelin/contracts/utils/structs/Checkpoints.sol
 /// @notice An abstract extension to the Governor which implements a fixed quorum which can be updated by governance.
 /// @custom:security-contact TODO: Add security contact
 abstract contract GovernorSettableFixedQuorumUpgradeable is Initializable, GovernorUpgradeable {
-    using Checkpoints for Checkpoints.Trace224;
+    using Checkpoints for Checkpoints.Trace208;
 
     /// @custom:storage-location erc7201:openzeppelin.storage.GovernorSettableFixedQuorum
     struct GovernorSettableFixedQuorumStorage {
-        Checkpoints.Trace224 _quorumCheckpoints;
+        Checkpoints.Trace208 _quorumCheckpoints;
     }
 
     // keccak256(abi.encode(uint256(keccak256("storage.GovernorSettableFixedQuorum")) - 1)) &
@@ -36,24 +36,24 @@ abstract contract GovernorSettableFixedQuorumUpgradeable is Initializable, Gover
     /// @notice Emitted when the quorum value has changed.
     event QuorumUpdated(uint256 oldQuorum, uint256 newQuorum);
 
-    function __GovernorSettableFixedQuorum_init(uint224 _initialQuorum) internal onlyInitializing {
+    function __GovernorSettableFixedQuorum_init(uint256 _initialQuorum) internal onlyInitializing {
         __GovernorSettableFixedQuorum_init_unchained(_initialQuorum);
     }
 
-    function __GovernorSettableFixedQuorum_init_unchained(uint224 _initialQuorum) internal onlyInitializing {
+    function __GovernorSettableFixedQuorum_init_unchained(uint256 _initialQuorum) internal onlyInitializing {
         _setQuorum(_initialQuorum);
     }
 
     /// @notice Initializer function to set the initial quorum.
     /// @param _initialQuorum The number of total votes needed to pass a proposal.
-    function initialize(uint224 _initialQuorum) public initializer {
+    function initialize(uint256 _initialQuorum) public initializer {
         _setQuorum(_initialQuorum);
     }
 
     /// @notice A function to set quorum for the current block timestamp. Proposals created after this timestamp will be
     /// subject to the new quorum.
     /// @param _amount The new quorum threshold.
-    function setQuorum(uint224 _amount) external onlyGovernance {
+    function setQuorum(uint256 _amount) external onlyGovernance {
         _setQuorum(_amount);
     }
 
@@ -66,10 +66,10 @@ abstract contract GovernorSettableFixedQuorumUpgradeable is Initializable, Gover
 
     /// @notice A function to set quorum for the current block timestamp.
     /// @param _amount The quorum amount to checkpoint.
-    function _setQuorum(uint224 _amount) internal {
+    function _setQuorum(uint256 _amount) internal {
         uint32 _timepoint = SafeCast.toUint32(clock());
         GovernorSettableFixedQuorumStorage storage $ = _getGovernorSettableFixedQuorumStorage();
-        emit QuorumUpdated(quorum(_timepoint), uint256(_amount));
-        $._quorumCheckpoints.push(_timepoint, _amount);
+        emit QuorumUpdated(quorum(_timepoint), _amount);
+        $._quorumCheckpoints.push(_timepoint, SafeCast.toUint208(_amount));
     }
 }

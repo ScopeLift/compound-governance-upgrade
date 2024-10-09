@@ -10,7 +10,7 @@ contract CompoundGovernorConstants {
     uint48 INITIAL_VOTING_DELAY = 13_140; // The delay before voting takes place, in blocks
     uint32 INITIAL_VOTING_PERIOD = 19_710; // The duration of voting on a proposal, in blocks
     uint256 INITIAL_PROPOSAL_THRESHOLD = 25_000e18; // Votes required in order for a voter to become proposer
-    uint224 INITIAL_QUORUM = 400_000e18; // 400,000 = 4% of Comp
+    uint256 INITIAL_QUORUM = 400_000e18; // 400,000 = 4% of Comp
 
     uint48 INITIAL_VOTE_EXTENSION = 7200; // Prevents sudden token moves before voting ends (2 days of blocks)
 
