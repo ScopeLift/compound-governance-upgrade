@@ -24,7 +24,7 @@ contract CompoundGovernorTest is Test, CompoundGovernorConstants {
     }
 
     function testInitialize() public view {
-        assertEq(governor.quorumVotes(), INITIAL_QUORUM);
+        assertEq(governor.quorum(block.timestamp), INITIAL_QUORUM);
         assertEq(governor.votingPeriod(), INITIAL_VOTING_PERIOD);
         assertEq(governor.votingDelay(), INITIAL_VOTING_DELAY);
         assertEq(governor.proposalThreshold(), INITIAL_PROPOSAL_THRESHOLD);
