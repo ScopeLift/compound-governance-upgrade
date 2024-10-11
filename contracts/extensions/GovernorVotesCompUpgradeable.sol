@@ -7,32 +7,32 @@ import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import {Time} from "@openzeppelin/contracts/utils/types/Time.sol";
 import {IComp} from "contracts/interfaces/IComp.sol";
 
-/// @title CompoundGovernorVotesUpgradeable
+/// @title GovernorVotesCompUpgradeable
 /// @author [ScopeLift](https://scopelift.co)
 /// @notice Modified GovernorVotes contract that supports Compound's COMP token.
 /// @custom:security-contact TODO: Add security contact
-abstract contract CompoundGovernorVotesUpgradeable is Initializable, GovernorUpgradeable {
-    /// @custom:storage-location IComp:storage.CompoundGovernorVotes
-    struct CompoundGovernorVotesStorage {
+abstract contract GovernorVotesCompUpgradeable is Initializable, GovernorUpgradeable {
+    /// @custom:storage-location IComp:storage.GovernorVotesComp
+    struct GovernorVotesCompStorage {
         IComp _token;
     }
 
-    // keccak256(abi.encode(uint256(keccak256("storage.CompoundGovernorVotes")) - 1)) & ~bytes32(uint256(0xff))
-    bytes32 private constant CompoundGovernorVotesStorageLocation =
+    // keccak256(abi.encode(uint256(keccak256("storage.GovernorVotesComp")) - 1)) & ~bytes32(uint256(0xff))
+    bytes32 private constant GovernorVotesCompStorageLocation =
         0x69f1f297e68cd1b53f75e4e19d390fe2baecb721066d42c98913bf524d296400;
 
-    function _getCompoundGovernorVotesStorage() private pure returns (CompoundGovernorVotesStorage storage $) {
+    function _getGovernorVotesCompStorage() private pure returns (GovernorVotesCompStorage storage $) {
         assembly {
-            $.slot := CompoundGovernorVotesStorageLocation
+            $.slot := GovernorVotesCompStorageLocation
         }
     }
 
-    function __CompoundGovernorVotes_init(IComp _tokenAddress) internal onlyInitializing {
-        __CompoundGovernorVotes_init_unchained(_tokenAddress);
+    function __GovernorVotesComp_init(IComp _tokenAddress) internal onlyInitializing {
+        __GovernorVotesComp_init_unchained(_tokenAddress);
     }
 
-    function __CompoundGovernorVotes_init_unchained(IComp _tokenAddress) internal onlyInitializing {
-        CompoundGovernorVotesStorage storage $ = _getCompoundGovernorVotesStorage();
+    function __GovernorVotesComp_init_unchained(IComp _tokenAddress) internal onlyInitializing {
+        GovernorVotesCompStorage storage $ = _getGovernorVotesCompStorage();
         $._token = IComp(address(_tokenAddress));
     }
 
@@ -40,7 +40,7 @@ abstract contract CompoundGovernorVotesUpgradeable is Initializable, GovernorUpg
     /// @dev This function retrieves the token address from the contract's storage.
     /// @return IComp The COMP token interface used for governance voting.
     function token() public view virtual returns (IComp) {
-        CompoundGovernorVotesStorage storage $ = _getCompoundGovernorVotesStorage();
+        GovernorVotesCompStorage storage $ = _getGovernorVotesCompStorage();
         return $._token;
     }
 

@@ -2,13 +2,13 @@
 pragma solidity 0.8.26;
 
 import {Test} from "forge-std/Test.sol";
-import {CompoundGovernorVotesUpgradeable} from "contracts/extensions/CompoundGovernorVotesUpgradeable.sol";
+import {GovernorVotesCompUpgradeable} from "contracts/extensions/GovernorVotesCompUpgradeable.sol";
 import {CompoundGovernorConstants} from "script/CompoundGovernorConstants.sol";
 import {IComp} from "contracts/interfaces/IComp.sol";
 
-contract CompoundGovernorVotesUpgradeableTestHarness is CompoundGovernorVotesUpgradeable {
+contract GovernorVotesCompUpgradeableTestHarness is GovernorVotesCompUpgradeable {
     function initialize(IComp _compToken) public initializer {
-        __CompoundGovernorVotes_init(_compToken);
+        __GovernorVotesComp_init(_compToken);
     }
 
     function COUNTING_MODE() external view override returns (string memory) {}
@@ -24,12 +24,12 @@ contract CompoundGovernorVotesUpgradeableTestHarness is CompoundGovernorVotesUpg
     function votingPeriod() public view override returns (uint256) {}
 }
 
-contract CompoundGovernorVotesUpgradeableTest is Test, CompoundGovernorConstants {
-    CompoundGovernorVotesUpgradeableTestHarness governorVotes;
+contract GovernorVotesCompUpgradeableTest is Test, CompoundGovernorConstants {
+    GovernorVotesCompUpgradeableTestHarness governorVotes;
 
     function setUp() public {
         vm.createSelectFork(vm.envOr("RPC_URL", string("Please set RPC_URL in your .env file")), FORK_BLOCK);
-        governorVotes = new CompoundGovernorVotesUpgradeableTestHarness();
+        governorVotes = new GovernorVotesCompUpgradeableTestHarness();
         governorVotes.initialize(IComp(COMP_TOKEN_ADDRESS));
     }
 
