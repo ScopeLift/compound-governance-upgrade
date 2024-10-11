@@ -33,19 +33,19 @@ contract CompoundGovernorVotesUpgradeableTest is Test, CompoundGovernorConstants
         governorVotes.initialize(IComp(COMP_TOKEN_ADDRESS));
     }
 
-    function test_Initialize() public {
+    function test_Initialize() public view {
         assertEq(address(governorVotes.token()), address(COMP_TOKEN_ADDRESS));
     }
 
-    function test_Clock() public {
+    function test_Clock() public view {
         assertEq(governorVotes.clock(), block.number);
     }
 
-    function test_ClockMode() public {
+    function test_ClockMode() public view {
         assertEq(governorVotes.CLOCK_MODE(), "mode=blocknumber&from=default");
     }
 
-    function testFuzz_GetVotes(uint256 _blockNumber) public {
+    function testFuzz_GetVotes(uint256 _blockNumber) public view {
         _blockNumber = bound(_blockNumber, 0, FORK_BLOCK - 1);
         for (uint256 i; i < _majorDelegates.length; i++) {
             assertEq(
