@@ -50,23 +50,23 @@ abstract contract GovernorSettableFixedQuorumUpgradeable is Initializable, Gover
         _setQuorum(_initialQuorum);
     }
 
-    /// @notice A function to set quorum for the current block timestamp. Proposals created after this timestamp will be
+    /// @notice A function to set quorum for the current timepoint. Proposals created after this timepoint will be
     /// subject to the new quorum.
     /// @param _amount The new quorum threshold.
-    function setQuorum(uint256 _amount) external onlyGovernance {
+    function setQuorum(uint256 _amount) external virtual onlyGovernance {
         _setQuorum(_amount);
     }
 
-    /// @notice A function to get the quorum threshold for a given timestamp.
-    /// @param _voteStart The timestamp of when voting starts for a given proposal.
-    function quorum(uint256 _voteStart) public view override returns (uint256) {
+    /// @notice A function to get the quorum threshold for a given timepoint.
+    /// @param _voteStart The vote start timepoint for a given proposal.
+    function quorum(uint256 _voteStart) public view virtual override returns (uint256) {
         GovernorSettableFixedQuorumStorage storage $ = _getGovernorSettableFixedQuorumStorage();
         return $._quorumCheckpoints.upperLookupRecent(SafeCast.toUint32(_voteStart));
     }
 
-    /// @notice A function to set quorum for the current block timestamp.
+    /// @notice A function to set quorum for the current timepoint.
     /// @param _amount The quorum amount to checkpoint.
-    function _setQuorum(uint256 _amount) internal {
+    function _setQuorum(uint256 _amount) internal virtual {
         uint48 _timepoint = clock();
         GovernorSettableFixedQuorumStorage storage $ = _getGovernorSettableFixedQuorumStorage();
         emit QuorumUpdated(quorum(_timepoint), _amount);
