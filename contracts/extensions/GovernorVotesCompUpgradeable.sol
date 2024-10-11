@@ -19,7 +19,7 @@ abstract contract GovernorVotesCompUpgradeable is Initializable, GovernorUpgrade
 
     // keccak256(abi.encode(uint256(keccak256("storage.GovernorVotesComp")) - 1)) & ~bytes32(uint256(0xff))
     bytes32 private constant GovernorVotesCompStorageLocation =
-        0x69f1f297e68cd1b53f75e4e19d390fe2baecb721066d42c98913bf524d296400;
+        0x2130f92f3b57a0ca0ff53b681825494ca70980d3b0ddffac97113db00028b600;
 
     function _getGovernorVotesCompStorage() private pure returns (GovernorVotesCompStorage storage $) {
         assembly {
