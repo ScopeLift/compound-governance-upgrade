@@ -10,18 +10,20 @@ contract CompoundGovernorTest is Test, CompoundGovernorConstants {
     CompoundGovernor governor;
     address owner;
     address whitelistGuardian;
+    CompoundGovernor.ProposalGuardian proposalGuardian;
 
     function setUp() public {
         // set the owner of the governor (use the anvil default account #0, if no environment variable is set)
         owner = vm.envOr("DEPLOYER_ADDRESS", 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266);
         whitelistGuardian = vm.envOr("WHITELIST_GUARDIAN_ADDRESS", 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266);
+        proposalGuardian = CompoundGovernor.ProposalGuardian(COMMUNITY_MULTISIG_ADDRESS, PROPOSAL_GUARDIAN_EXPIRY);
         // set the RPC URL and the fork block number to create a local execution fork for testing
         vm.createSelectFork(vm.envOr("RPC_URL", string("Please set RPC_URL in your .env file")), FORK_BLOCK);
 
         // Deploy the CompoundGovernor contract
         DeployCompoundGovernor _deployer = new DeployCompoundGovernor();
         _deployer.setUp();
-        governor = _deployer.run(owner, whitelistGuardian);
+        governor = _deployer.run(owner, whitelistGuardian, proposalGuardian);
     }
 
     function testInitialize() public view {
@@ -33,6 +35,10 @@ contract CompoundGovernorTest is Test, CompoundGovernorConstants {
         assertEq(address(governor.timelock()), TIMELOCK_ADDRESS);
         assertEq(address(governor.token()), COMP_TOKEN_ADDRESS);
         assertEq(governor.owner(), owner);
+        assertEq(governor.whitelistGuardian(), whitelistGuardian);
+        (address _proposalGuardian, uint96 _expiration) = governor.proposalGuardian();
+        assertEq(_proposalGuardian, proposalGuardian.account);
+        assertEq(_expiration, proposalGuardian.expiration);
     }
 
     function _timelockOrWhitelistGuardian(uint256 _randomSeed) internal view returns (address) {
@@ -137,5 +143,41 @@ contract SetWhitelistGuardian is CompoundGovernorTest {
         );
         vm.prank(_caller);
         governor.setWhitelistGuardian(_whitelistGuardian);
+    }
+}
+
+contract SetProposalGuardian is CompoundGovernorTest {
+    function testFuzz_SetsProposalGuardianAsTimelock(CompoundGovernor.ProposalGuardian memory _proposalGuardian)
+        public
+    {
+        vm.prank(TIMELOCK_ADDRESS);
+        governor.setProposalGuardian(_proposalGuardian);
+        (address _account, uint96 _expiration) = governor.proposalGuardian();
+        assertEq(_account, _proposalGuardian.account);
+        assertEq(_expiration, _proposalGuardian.expiration);
+    }
+
+    function testFuzz_EmitsEventWhenAProposalGuardianIsSetByTheTimelock(
+        CompoundGovernor.ProposalGuardian memory _proposalGuardian
+    ) public {
+        (address _currentAccount, uint96 _currentExpiration) = governor.proposalGuardian();
+        vm.expectEmit();
+        emit CompoundGovernor.ProposalGuardianSet(
+            _currentAccount, _currentExpiration, _proposalGuardian.account, _proposalGuardian.expiration
+        );
+        vm.prank(TIMELOCK_ADDRESS);
+        governor.setProposalGuardian(_proposalGuardian);
+    }
+
+    function testFuzz_RevertIf_CallerIsNotTimelock(
+        CompoundGovernor.ProposalGuardian memory _proposalGuardian,
+        address _caller
+    ) public {
+        vm.assume(_caller != TIMELOCK_ADDRESS);
+        vm.expectRevert(
+            abi.encodeWithSelector(CompoundGovernor.Unauthorized.selector, bytes32("Not timelock"), _caller)
+        );
+        vm.prank(_caller);
+        governor.setProposalGuardian(_proposalGuardian);
     }
 }

@@ -21,7 +21,10 @@ contract DeployCompoundGovernor is Script, CompoundGovernorConstants {
         );
     }
 
-    function run(address _owner, address _whitelistGuardian) public returns (CompoundGovernor _governor) {
+    function run(address _owner, address _whitelistGuardian, CompoundGovernor.ProposalGuardian memory _proposalGuardian)
+        public
+        returns (CompoundGovernor _governor)
+    {
         vm.startBroadcast(deployerPrivateKey);
 
         // Deploy Governor implementation contract
@@ -38,7 +41,8 @@ contract DeployCompoundGovernor is Script, CompoundGovernorConstants {
                 ICompoundTimelock(TIMELOCK_ADDRESS),
                 INITIAL_VOTE_EXTENSION,
                 _owner,
-                _whitelistGuardian
+                _whitelistGuardian,
+                _proposalGuardian
             )
         );
         TransparentUpgradeableProxy _proxy =
