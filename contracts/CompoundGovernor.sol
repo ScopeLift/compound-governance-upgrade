@@ -42,6 +42,19 @@ contract CompoundGovernor is
     /// @param newGuardian The address of the new whitelistGuardian.
     event WhitelistGuardianSet(address oldGuardian, address newGuardian);
 
+    /// @notice Emitted when the proposalGuardian is set
+    /// @notice Emitted when the proposal guardian is set or updated.
+    /// @param oldProposalGuardian The address of the previous proposal guardian.
+    /// @param oldProposalGuardianExpiry The expiration timestamp of the previous proposal guardian's role.
+    /// @param newProposalGuardian The address of the new proposal guardian.
+    /// @param newProposalGuardianExpiry The expiration timestamp of the new proposal guardian's role.
+    event ProposalGuardianSet(
+        address oldProposalGuardian,
+        uint96 oldProposalGuardianExpiry,
+        address newProposalGuardian,
+        uint96 newProposalGuardianExpiry
+    );
+
     /// @notice Error thrown when an unauthorized address attempts to perform a restricted action.
     /// @param reason A brief description of why the caller is unauthorized.
     /// @param caller The address that attempted the unauthorized action.
@@ -52,8 +65,20 @@ contract CompoundGovernor is
     /// process.
     address public whitelistGuardian;
 
+    /// @notice Account which has the ability to cancel proposals. This privilege expires at the given expiration
+    /// timestamp.
+    ProposalGuardian public proposalGuardian;
+
     /// @notice Stores the expiration of account whitelist status as a timestamp
     mapping(address account => uint256 timestamp) public whitelistAccountExpirations;
+
+    /// @notice The address and expiration of the proposal guardian.
+    struct ProposalGuardian {
+        // Address of the `ProposalGuardian`
+        address account;
+        // Timestamp at which the guardian loses the ability to cancel proposals
+        uint96 expiration;
+    }
 
     /// @notice Disables the initialize function.
     constructor() {
@@ -78,7 +103,8 @@ contract CompoundGovernor is
         ICompoundTimelock _timelockAddress,
         uint48 _initialVoteExtension,
         address _initialOwner,
-        address _whitelistGuardian
+        address _whitelistGuardian,
+        ProposalGuardian calldata _proposalGuardian
     ) public initializer {
         __Governor_init("Compound Governor");
         __GovernorSettings_init(_initialVotingDelay, _initialVotingPeriod, _initialProposalThreshold);
@@ -88,6 +114,7 @@ contract CompoundGovernor is
         __GovernorSettableFixedQuorum_init(_quorumVotes);
         __Ownable_init(_initialOwner);
         _setWhitelistGuardian(_whitelistGuardian);
+        _setProposalGuardian(_proposalGuardian);
     }
 
     /// @notice Sets or updates the whitelist expiration for a specific account.
@@ -120,12 +147,35 @@ contract CompoundGovernor is
         _setWhitelistGuardian(_newWhitelistGuardian);
     }
 
+    /// @notice Sets a new proposal guardian.
+    /// @dev This function can only be called by the executor (timelock).
+    /// @param _newProposalGuardian The new proposal guardian to be set, including their address and expiration.
+    function setProposalGuardian(ProposalGuardian memory _newProposalGuardian) external {
+        if (msg.sender != _executor()) {
+            revert Unauthorized("Not timelock", msg.sender);
+        }
+        _setProposalGuardian(_newProposalGuardian);
+    }
+
     /// @notice Admin function for setting the whitelistGuardian. WhitelistGuardian can cancel proposals from
     /// whitelisted addresses.
     /// @param _newWhitelistGuardian Account to set whitelistGuardian to (0x0 to remove whitelistGuardian).
     function _setWhitelistGuardian(address _newWhitelistGuardian) internal {
         emit WhitelistGuardianSet(whitelistGuardian, _newWhitelistGuardian);
         whitelistGuardian = _newWhitelistGuardian;
+    }
+
+    /// @notice Internal function to set a new proposal guardian.
+    /// @dev This function updates the proposal guardian and emits an event.
+    /// @param _newProposalGuardian The new proposal guardian to be set, including their address and expiration.
+    function _setProposalGuardian(ProposalGuardian memory _newProposalGuardian) internal {
+        emit ProposalGuardianSet(
+            proposalGuardian.account,
+            proposalGuardian.expiration,
+            _newProposalGuardian.account,
+            _newProposalGuardian.expiration
+        );
+        proposalGuardian = _newProposalGuardian;
     }
 
     /// @inheritdoc GovernorTimelockCompoundUpgradeable

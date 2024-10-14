@@ -22,6 +22,9 @@ contract CompoundGovernorConstants {
 
     // The address of the proxy admin
     address PROXY_ADMIN_ADDRESS = 0xc4d00a02C57B8C10F4fC85d7bf1F892f1098Cb7B;
+    address COMMUNITY_MULTISIG_ADDRESS = 0xbbf3f1421D886E9b2c5D716B5192aC998af2012c; // Current proposal guardian.
+
+    uint96 PROPOSAL_GUARDIAN_EXPIRY = 1_739_768_400;
 
     // The fork block for testing
     uint256 FORK_BLOCK = 20_885_000;
