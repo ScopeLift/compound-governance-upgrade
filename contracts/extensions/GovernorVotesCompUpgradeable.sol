@@ -62,7 +62,7 @@ abstract contract GovernorVotesCompUpgradeable is Initializable, GovernorUpgrade
     /// @notice Retrieves the voting weight for a specific account at a given timepoint.
     /// @dev This function overrides the base _getVotes function to use Compound's getPriorVotes mechanism.
     /// @param _account The address of the account to check the voting weight for.
-    /// @param _timepoint The block number at which to check the voting weight.
+    /// @param _timepoint The timepoint at which to check the voting weight.
     /// @param /*params*/ Unused parameter, kept for compatibility with the base function signature.
     /// @return uint256 The voting weight of the account at the specified timepoint.
     function _getVotes(address _account, uint256 _timepoint, bytes memory /*params*/ )
