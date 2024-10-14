@@ -3,7 +3,7 @@ pragma solidity 0.8.26;
 
 import {ProposalTest} from "contracts/test/helpers/ProposalTest.sol";
 
-contract CompoundGovernorInitializeTest is ProposalTest {
+contract CompoundGovernorSetQuorumTest is ProposalTest {
     function _submitPassAndExecuteProposalToSetNewQuorum(address _proposer, uint256 _amount) public {
         address[] memory _targets = new address[](1);
         _targets[0] = address(governor);
@@ -33,14 +33,14 @@ contract CompoundGovernorInitializeTest is ProposalTest {
     }
 
     function testFuzz_SetQuorum(uint256 _newQuorum) public {
-        _newQuorum = uint224(bound(_newQuorum, 1, 1000));
+        _newQuorum = bound(_newQuorum, 1, 1000);
         _submitPassAndExecuteProposalToSetNewQuorum(delegatee, _newQuorum);
         assertEq(governor.quorum(block.timestamp), _newQuorum);
     }
 
     function testFuzz_FailSetQuorum(uint256 _newQuorum) public {
         vm.assume(_newQuorum != INITIAL_QUORUM);
-        _newQuorum = uint224(bound(_newQuorum, 1, 1000));
+        _newQuorum = bound(_newQuorum, 1, 1000);
         _submitAndFailProposalToSetNewQuorum(delegatee, _newQuorum);
         assertNotEq(governor.quorum(block.timestamp), _newQuorum);
     }
