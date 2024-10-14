@@ -32,6 +32,29 @@ contract CompoundGovernor is
     GovernorSettableFixedQuorumUpgradeable,
     OwnableUpgradeable
 {
+    /// @notice Emitted when the expiration of a whitelisted account is set or updated.
+    /// @param account The address of the account being whitelisted.
+    /// @param expiration The timestamp until which the account is whitelisted.
+    event WhitelistAccountExpirationSet(address account, uint256 expiration);
+
+    /// @notice Emitted when the whitelistGuardian is set or changed.
+    /// @param oldGuardian The address of the previous whitelistGuardian.
+    /// @param newGuardian The address of the new whitelistGuardian.
+    event WhitelistGuardianSet(address oldGuardian, address newGuardian);
+
+    /// @notice Error thrown when an unauthorized address attempts to perform a restricted action.
+    /// @param reason A brief description of why the caller is unauthorized.
+    /// @param caller The address that attempted the unauthorized action.
+    error Unauthorized(bytes32 reason, address caller);
+
+    /// @notice Address which manages whitelisted proposals and whitelist accounts.
+    /// @dev This address has the ability to set account whitelist expirations and can be changed through the governance
+    /// process.
+    address public whitelistGuardian;
+
+    /// @notice Stores the expiration of account whitelist status as a timestamp
+    mapping(address account => uint256 timestamp) public whitelistAccountExpirations;
+
     /// @notice Disables the initialize function.
     constructor() {
         _disableInitializers();
@@ -54,7 +77,8 @@ contract CompoundGovernor is
         uint256 _quorumVotes,
         ICompoundTimelock _timelockAddress,
         uint48 _initialVoteExtension,
-        address _initialOwner
+        address _initialOwner,
+        address _whitelistGuardian
     ) public initializer {
         __Governor_init("Compound Governor");
         __GovernorSettings_init(_initialVotingDelay, _initialVotingPeriod, _initialProposalThreshold);
@@ -63,6 +87,45 @@ contract CompoundGovernor is
         __GovernorPreventLateQuorum_init(_initialVoteExtension);
         __GovernorSettableFixedQuorum_init(_quorumVotes);
         __Ownable_init(_initialOwner);
+        _setWhitelistGuardian(_whitelistGuardian);
+    }
+
+    /// @notice Sets or updates the whitelist expiration for a specific account.
+    /// @param _account The address of the account to be whitelisted.
+    /// @param _expiration The timestamp until which the account will be whitelisted.
+    /// @dev Only the executor (timelock) or the whitelistGuardian can call this function.
+    function setWhitelistAccountExpiration(address _account, uint256 _expiration) external {
+        if (msg.sender != _executor() && msg.sender != whitelistGuardian) {
+            revert Unauthorized("Not timelock or guardian", msg.sender);
+        }
+
+        whitelistAccountExpirations[_account] = _expiration;
+        emit WhitelistAccountExpirationSet(_account, _expiration);
+    }
+
+    /// @notice Checks if an account is currently whitelisted.
+    /// @param _account The address of the account to check.
+    /// @return bool Returns true if the account is whitelisted (expiration is in the future), false otherwise.
+    function isWhitelisted(address _account) public view returns (bool) {
+        return (whitelistAccountExpirations[_account] > block.timestamp);
+    }
+
+    /// @notice Sets a new whitelistGuardian.
+    /// @param _newWhitelistGuardian The address of the new whitelistGuardian.
+    /// @dev Only the executor (timelock) can call this function.
+    function setWhitelistGuardian(address _newWhitelistGuardian) public {
+        if (msg.sender != _executor()) {
+            revert Unauthorized("Not timelock", msg.sender);
+        }
+        _setWhitelistGuardian(_newWhitelistGuardian);
+    }
+
+    /// @notice Admin function for setting the whitelistGuardian. WhitelistGuardian can cancel proposals from
+    /// whitelisted addresses.
+    /// @param _newWhitelistGuardian Account to set whitelistGuardian to (0x0 to remove whitelistGuardian).
+    function _setWhitelistGuardian(address _newWhitelistGuardian) internal {
+        emit WhitelistGuardianSet(whitelistGuardian, _newWhitelistGuardian);
+        whitelistGuardian = _newWhitelistGuardian;
     }
 
     /// @inheritdoc GovernorTimelockCompoundUpgradeable
