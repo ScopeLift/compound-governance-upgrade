@@ -42,6 +42,6 @@ contract CompoundGovernorSetQuorumTest is ProposalTest {
         vm.assume(_newQuorum != INITIAL_QUORUM);
         _newQuorum = bound(_newQuorum, 1, 1000);
         _submitAndFailProposalToSetNewQuorum(delegatee, _newQuorum);
-        assertNotEq(governor.quorum(block.timestamp), _newQuorum);
+        assertEq(governor.quorum(block.timestamp), INITIAL_QUORUM);
     }
 }
