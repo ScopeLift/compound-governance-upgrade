@@ -3,8 +3,10 @@ pragma solidity 0.8.26;
 
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import {GovernorUpgradeable} from "@openzeppelin/contracts-upgradeable/governance/GovernorUpgradeable.sol";
+import {GovernorStorageEnumIdsUpgradeable} from "contracts/extensions/GovernorStorageEnumIdsUpgradeable.sol";
 import {GovernorVotesCompUpgradeable} from "contracts/extensions/GovernorVotesCompUpgradeable.sol";
 import {GovernorSettableFixedQuorumUpgradeable} from "contracts/extensions/GovernorSettableFixedQuorumUpgradeable.sol";
+import {GovernorBravoDelegateStorageV1} from "contracts/GovernorBravoInterfaces.sol";
 import {GovernorCountingFractionalUpgradeable} from
     "@openzeppelin/contracts-upgradeable/governance/extensions/GovernorCountingFractionalUpgradeable.sol";
 import {GovernorTimelockCompoundUpgradeable} from
@@ -25,6 +27,7 @@ import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 contract CompoundGovernor is
     Initializable,
     GovernorVotesCompUpgradeable,
+    GovernorStorageEnumIdsUpgradeable,
     GovernorTimelockCompoundUpgradeable,
     GovernorSettingsUpgradeable,
     GovernorCountingFractionalUpgradeable,
@@ -54,11 +57,13 @@ contract CompoundGovernor is
         uint256 _quorumVotes,
         ICompoundTimelock _timelockAddress,
         uint48 _initialVoteExtension,
+        uint256 _startingProposalId,
         address _initialOwner
     ) public initializer {
         __Governor_init("Compound Governor");
         __GovernorSettings_init(_initialVotingDelay, _initialVotingPeriod, _initialProposalThreshold);
         __GovernorVotesComp_init(_compAddress);
+        __GovernorStorageEnumIds_init(_startingProposalId);
         __GovernorTimelockCompound_init(_timelockAddress);
         __GovernorPreventLateQuorum_init(_initialVoteExtension);
         __GovernorSettableFixedQuorum_init(_quorumVotes);
@@ -84,7 +89,12 @@ contract CompoundGovernor is
         uint8 _support,
         string memory _reason,
         bytes memory _params
-    ) internal virtual override(GovernorUpgradeable, GovernorPreventLateQuorumUpgradeable) returns (uint256) {
+    )
+        internal
+        virtual
+        override(GovernorUpgradeable, GovernorStorageEnumIdsUpgradeable, GovernorPreventLateQuorumUpgradeable)
+        returns (uint256)
+    {
         return GovernorPreventLateQuorumUpgradeable._castVote(_proposalId, _account, _support, _reason, _params);
     }
 
@@ -132,7 +142,7 @@ contract CompoundGovernor is
         public
         view
         virtual
-        override(GovernorPreventLateQuorumUpgradeable, GovernorUpgradeable)
+        override(GovernorUpgradeable, GovernorPreventLateQuorumUpgradeable)
         returns (uint256)
     {
         return GovernorPreventLateQuorumUpgradeable.proposalDeadline(_proposalId);
@@ -144,7 +154,7 @@ contract CompoundGovernor is
         public
         view
         virtual
-        override(GovernorTimelockCompoundUpgradeable, GovernorUpgradeable)
+        override(GovernorUpgradeable, GovernorTimelockCompoundUpgradeable)
         returns (bool)
     {
         return GovernorTimelockCompoundUpgradeable.proposalNeedsQueuing(_proposalId);
@@ -156,7 +166,7 @@ contract CompoundGovernor is
         public
         view
         virtual
-        override(GovernorSettingsUpgradeable, GovernorUpgradeable)
+        override(GovernorUpgradeable, GovernorSettingsUpgradeable)
         returns (uint256)
     {
         return GovernorSettingsUpgradeable.proposalThreshold();
@@ -172,5 +182,17 @@ contract CompoundGovernor is
         returns (ProposalState)
     {
         return GovernorTimelockCompoundUpgradeable.state(_proposalId);
+    }
+
+    /// @inheritdoc GovernorStorageEnumIdsUpgradeable
+    /// @dev We override this function to resolve ambiguity between inherited contracts.
+    function _propose(
+        address[] memory _targets,
+        uint256[] memory _values,
+        bytes[] memory _calldatas,
+        string memory _description,
+        address _proposer
+    ) internal virtual override(GovernorUpgradeable, GovernorStorageEnumIdsUpgradeable) returns (uint256) {
+        return GovernorStorageEnumIdsUpgradeable._propose(_targets, _values, _calldatas, _description, _proposer);
     }
 }

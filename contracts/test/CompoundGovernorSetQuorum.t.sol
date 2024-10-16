@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: BSD-3-Clause
 pragma solidity 0.8.26;
 
+import {GovernorCountingSimpleUpgradeable} from
+    "@openzeppelin/contracts-upgradeable/governance/extensions/GovernorCountingSimpleUpgradeable.sol";
 import {ProposalTest} from "contracts/test/helpers/ProposalTest.sol";
 import {IGovernor} from "@openzeppelin/contracts/governance/IGovernor.sol";
 
@@ -30,6 +32,18 @@ contract CompoundGovernorSetQuorumTest is ProposalTest {
         _newQuorum = bound(_newQuorum, 1, INITIAL_QUORUM * 10);
         Proposal memory _proposal = _buildSetQuorumProposal(_newQuorum);
         _submitAndFailProposal(delegatee, _proposal);
+        assertEq(governor.quorum(block.timestamp), INITIAL_QUORUM);
+    }
+
+    function testFuzz_CancelSetQuorum(uint256 _newQuorum) public {
+        vm.assume(_newQuorum != INITIAL_QUORUM);
+        _newQuorum = bound(_newQuorum, 1, INITIAL_QUORUM * 10);
+        Proposal memory _proposal = _buildSetQuorumProposal(_newQuorum);
+        vm.prank(delegatee);
+        uint256 _proposalId =
+            governor.propose(_proposal.targets, _proposal.values, _proposal.calldatas, _proposal.description);
+        vm.prank(delegatee);
+        governor.cancel(_proposalId);
         assertEq(governor.quorum(block.timestamp), INITIAL_QUORUM);
     }
 
