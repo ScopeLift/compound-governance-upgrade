@@ -9,9 +9,12 @@ import {IComp} from "contracts/interfaces/IComp.sol";
 import {ICompoundTimelock} from "@openzeppelin/contracts/vendor/compound/ICompoundTimelock.sol";
 import {CompoundGovernor} from "contracts/CompoundGovernor.sol";
 import {CompoundGovernorConstants} from "script/CompoundGovernorConstants.sol";
+import {GovernorBravoDelegateStorageV1} from "contracts/GovernorBravoInterfaces.sol";
 
 // Deploy script for the underlying implementation that will be used by both Governor proxies
 contract DeployCompoundGovernor is Script, CompoundGovernorConstants {
+    address constant GOVERNOR_BRAVO_DELEGATE_ADDRESS = 0xc0Da02939E1441F497fd74F78cE7Decb17B66529;
+
     uint256 deployerPrivateKey;
 
     function setUp() public virtual {
@@ -25,6 +28,10 @@ contract DeployCompoundGovernor is Script, CompoundGovernorConstants {
         public
         returns (CompoundGovernor _governor)
     {
+        GovernorBravoDelegateStorageV1 _governorBravoStorage =
+            GovernorBravoDelegateStorageV1(GOVERNOR_BRAVO_DELEGATE_ADDRESS);
+        uint256 _startingProposalId = _governorBravoStorage.proposalCount();
+
         vm.startBroadcast(deployerPrivateKey);
 
         // Deploy Governor implementation contract
@@ -42,7 +49,8 @@ contract DeployCompoundGovernor is Script, CompoundGovernorConstants {
                 INITIAL_VOTE_EXTENSION,
                 _owner,
                 _whitelistGuardian,
-                _proposalGuardian
+                _proposalGuardian,
+                _startingProposalId
             )
         );
         TransparentUpgradeableProxy _proxy =
