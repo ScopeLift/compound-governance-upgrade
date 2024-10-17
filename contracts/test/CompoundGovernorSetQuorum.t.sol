@@ -35,6 +35,7 @@ contract CompoundGovernorSetQuorumTest is ProposalTest {
 
     function testFuzz_RevertIf_CalledByNonTimelock(address _caller, uint256 _newQuorum) public {
         vm.assume(_caller != address(timelock));
+        vm.assume(_caller != PROXY_ADMIN_ADDRESS);
         vm.prank(_caller);
         _newQuorum = bound(_newQuorum, 1, INITIAL_QUORUM * 10);
         vm.expectRevert(abi.encodeWithSelector(IGovernor.GovernorOnlyExecutor.selector, _caller));
