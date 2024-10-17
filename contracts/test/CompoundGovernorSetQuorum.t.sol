@@ -33,14 +33,14 @@ contract CompoundGovernorSetQuorumTest is ProposalTest {
     }
 
     function testFuzz_SetQuorum(uint256 _newQuorum) public {
-        _newQuorum = bound(_newQuorum, 1, 1000);
+        _newQuorum = bound(_newQuorum, 1, INITIAL_QUORUM * 10);
         _submitPassAndExecuteProposalToSetNewQuorum(delegatee, _newQuorum);
         assertEq(governor.quorum(block.timestamp), _newQuorum);
     }
 
     function testFuzz_FailSetQuorum(uint256 _newQuorum) public {
         vm.assume(_newQuorum != INITIAL_QUORUM);
-        _newQuorum = bound(_newQuorum, 1, 1000);
+        _newQuorum = bound(_newQuorum, 1, INITIAL_QUORUM * 10);
         _submitAndFailProposalToSetNewQuorum(delegatee, _newQuorum);
         assertEq(governor.quorum(block.timestamp), INITIAL_QUORUM);
     }
