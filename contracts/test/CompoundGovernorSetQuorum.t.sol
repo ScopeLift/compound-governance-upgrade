@@ -14,7 +14,7 @@ contract CompoundGovernorSetQuorumTest is ProposalTest {
         bytes[] memory _calldatas = new bytes[](1);
         _calldatas[0] = _buildProposalData("setQuorum(uint256)", abi.encode(_amount));
 
-        ConstructedProposal memory _proposal = ConstructedProposal(_targets, _values, _calldatas, "Set New Quorum");
+        Proposal memory _proposal = Proposal(_targets, _values, _calldatas, "Set New Quorum");
         _submitPassQueueAndExecuteProposal(_proposer, _proposal);
     }
 
@@ -28,7 +28,7 @@ contract CompoundGovernorSetQuorumTest is ProposalTest {
         bytes[] memory _calldatas = new bytes[](1);
         _calldatas[0] = _buildProposalData("setQuorum(uint256)", abi.encode(_amount));
 
-        ConstructedProposal memory _proposal = ConstructedProposal(_targets, _values, _calldatas, "Set New Quorum");
+        Proposal memory _proposal = Proposal(_targets, _values, _calldatas, "Set New Quorum");
         _submitAndFailProposal(_proposer, _proposal);
     }
 

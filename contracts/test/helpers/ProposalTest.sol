@@ -7,7 +7,7 @@ import {GovernorCountingSimpleUpgradeable} from
 import {CompoundGovernorTest} from "contracts/test/helpers/CompoundGovernorTest.sol";
 
 contract ProposalTest is CompoundGovernorTest {
-    struct ConstructedProposal {
+    struct Proposal {
         address[] targets;
         uint256[] values;
         bytes[] calldatas;
@@ -46,7 +46,7 @@ contract ProposalTest is CompoundGovernorTest {
         vm.assume(_to != address(0) && _to != COMPOUND_COMPTROLLER);
     }
 
-    function _submitProposal(address _proposer, ConstructedProposal memory _proposal)
+    function _submitProposal(address _proposer, Proposal memory _proposal)
         public
         returns (uint256 _proposalId)
     {
@@ -56,7 +56,7 @@ contract ProposalTest is CompoundGovernorTest {
         vm.roll(vm.getBlockNumber() + INITIAL_VOTING_DELAY + 1);
     }
 
-    function _passQueueAndExecuteProposal(ConstructedProposal memory _proposal, uint256 _proposalId) public {
+    function _passQueueAndExecuteProposal(Proposal memory _proposal, uint256 _proposalId) public {
         uint256 _timeLockDelay = timelock.delay();
         vm.prank(delegatee);
         governor.castVote(_proposalId, uint8(GovernorCountingSimpleUpgradeable.VoteType.For));
@@ -79,12 +79,12 @@ contract ProposalTest is CompoundGovernorTest {
         vm.roll(vm.getBlockNumber() + INITIAL_VOTING_PERIOD + 1);
     }
 
-    function _submitPassQueueAndExecuteProposal(address _proposer, ConstructedProposal memory _proposal) public {
+    function _submitPassQueueAndExecuteProposal(address _proposer, Proposal memory _proposal) public {
         uint256 _proposalId = _submitProposal(_proposer, _proposal);
         _passQueueAndExecuteProposal(_proposal, _proposalId);
     }
 
-    function _submitAndFailProposal(address _proposer, ConstructedProposal memory _proposal) public {
+    function _submitAndFailProposal(address _proposer, Proposal memory _proposal) public {
         uint256 _proposalId = _submitProposal(_proposer, _proposal);
         _failProposal(_proposalId);
     }
