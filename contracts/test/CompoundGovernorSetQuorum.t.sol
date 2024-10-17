@@ -5,7 +5,7 @@ import {ProposalTest} from "contracts/test/helpers/ProposalTest.sol";
 import {IGovernor} from "@openzeppelin/contracts/governance/IGovernor.sol";
 
 contract CompoundGovernorSetQuorumTest is ProposalTest {
-    function _submitPassAndExecuteProposalToSetNewQuorum(address _proposer, uint256 _amount) public {
+    function _buildSetQuorumProposal(uint256 _amount) private view returns (Proposal memory _proposal) {
         address[] memory _targets = new address[](1);
         _targets[0] = address(governor);
 
@@ -15,34 +15,21 @@ contract CompoundGovernorSetQuorumTest is ProposalTest {
         bytes[] memory _calldatas = new bytes[](1);
         _calldatas[0] = _buildProposalData("setQuorum(uint256)", abi.encode(_amount));
 
-        Proposal memory _proposal = Proposal(_targets, _values, _calldatas, "Set New Quorum");
-        _submitPassQueueAndExecuteProposal(_proposer, _proposal);
-    }
-
-    function _submitAndFailProposalToSetNewQuorum(address _proposer, uint256 _amount) public {
-        address[] memory _targets = new address[](1);
-        _targets[0] = address(governor);
-
-        uint256[] memory _values = new uint256[](1);
-        _values[0] = 0;
-
-        bytes[] memory _calldatas = new bytes[](1);
-        _calldatas[0] = _buildProposalData("setQuorum(uint256)", abi.encode(_amount));
-
-        Proposal memory _proposal = Proposal(_targets, _values, _calldatas, "Set New Quorum");
-        _submitAndFailProposal(_proposer, _proposal);
+        _proposal = Proposal(_targets, _values, _calldatas, "Set New Quorum");
     }
 
     function testFuzz_SetQuorum(uint256 _newQuorum) public {
         _newQuorum = bound(_newQuorum, 1, INITIAL_QUORUM * 10);
-        _submitPassAndExecuteProposalToSetNewQuorum(delegatee, _newQuorum);
+        Proposal memory _proposal = _buildSetQuorumProposal(_newQuorum);
+        _submitPassQueueAndExecuteProposal(delegatee, _proposal);
         assertEq(governor.quorum(block.timestamp), _newQuorum);
     }
 
     function testFuzz_FailSetQuorum(uint256 _newQuorum) public {
         vm.assume(_newQuorum != INITIAL_QUORUM);
         _newQuorum = bound(_newQuorum, 1, INITIAL_QUORUM * 10);
-        _submitAndFailProposalToSetNewQuorum(delegatee, _newQuorum);
+        Proposal memory _proposal = _buildSetQuorumProposal(_newQuorum);
+        _submitAndFailProposal(delegatee, _proposal);
         assertEq(governor.quorum(block.timestamp), INITIAL_QUORUM);
     }
 
