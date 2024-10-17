@@ -46,10 +46,7 @@ contract ProposalTest is CompoundGovernorTest {
         vm.assume(_to != address(0) && _to != COMPOUND_COMPTROLLER);
     }
 
-    function _submitProposal(address _proposer, Proposal memory _proposal)
-        public
-        returns (uint256 _proposalId)
-    {
+    function _submitProposal(address _proposer, Proposal memory _proposal) public returns (uint256 _proposalId) {
         vm.prank(_proposer);
         _proposalId = governor.propose(_proposal.targets, _proposal.values, _proposal.calldatas, _proposal.description);
 

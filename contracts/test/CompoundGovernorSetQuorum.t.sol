@@ -2,6 +2,7 @@
 pragma solidity 0.8.26;
 
 import {ProposalTest} from "contracts/test/helpers/ProposalTest.sol";
+import {IGovernor} from "@openzeppelin/contracts/governance/IGovernor.sol";
 
 contract CompoundGovernorSetQuorumTest is ProposalTest {
     function _submitPassAndExecuteProposalToSetNewQuorum(address _proposer, uint256 _amount) public {
@@ -43,5 +44,13 @@ contract CompoundGovernorSetQuorumTest is ProposalTest {
         _newQuorum = bound(_newQuorum, 1, INITIAL_QUORUM * 10);
         _submitAndFailProposalToSetNewQuorum(delegatee, _newQuorum);
         assertEq(governor.quorum(block.timestamp), INITIAL_QUORUM);
+    }
+
+    function testFuzz_RevertIf_CalledByNonTimelock(address _caller, uint256 _newQuorum) public {
+        vm.assume(_caller != address(timelock));
+        vm.prank(_caller);
+        _newQuorum = bound(_newQuorum, 1, INITIAL_QUORUM * 10);
+        vm.expectRevert(abi.encodeWithSelector(IGovernor.GovernorOnlyExecutor.selector, _caller));
+        governor.setQuorum(_newQuorum);
     }
 }
