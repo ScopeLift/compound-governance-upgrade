@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: BSD-3-Clause
 pragma solidity 0.8.26;
 
-import {GovernorCountingSimpleUpgradeable} from
-    "@openzeppelin/contracts-upgradeable/governance/extensions/GovernorCountingSimpleUpgradeable.sol";
 import {ProposalTest} from "contracts/test/helpers/ProposalTest.sol";
 import {IGovernor} from "@openzeppelin/contracts/governance/IGovernor.sol";
 
