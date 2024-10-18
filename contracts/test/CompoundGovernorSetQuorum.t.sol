@@ -33,6 +33,18 @@ contract CompoundGovernorSetQuorumTest is ProposalTest {
         assertEq(governor.quorum(block.timestamp), INITIAL_QUORUM);
     }
 
+    function testFuzz_CancelSetQuorum(uint256 _newQuorum) public {
+        vm.assume(_newQuorum != INITIAL_QUORUM);
+        _newQuorum = bound(_newQuorum, 1, INITIAL_QUORUM * 10);
+        Proposal memory _proposal = _buildSetQuorumProposal(_newQuorum);
+        vm.prank(delegatee);
+        uint256 _proposalId =
+            governor.propose(_proposal.targets, _proposal.values, _proposal.calldatas, _proposal.description);
+        vm.prank(delegatee);
+        governor.cancel(_proposalId);
+        assertEq(governor.quorum(block.timestamp), INITIAL_QUORUM);
+    }
+
     function testFuzz_RevertIf_CalledByNonTimelock(address _caller, uint256 _newQuorum) public {
         vm.assume(_caller != address(timelock));
         vm.assume(_caller != PROXY_ADMIN_ADDRESS);
