@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: MIT
-// OpenZeppelin Contracts (last updated v5.1.0-rc.0) (governance/extensions/GovernorStorage.sol)
 
 pragma solidity ^0.8.20;
 
@@ -15,6 +14,7 @@ import {DoubleEndedQueue} from "@openzeppelin/contracts/utils/structs/DoubleEnde
 abstract contract GovernorStorageEnumIdsUpgradeable is Initializable, GovernorUpgradeable {
     using DoubleEndedQueue for DoubleEndedQueue.Bytes32Deque;
     /// @dev Storage structure to store proposal details.
+
     struct ProposalDetails {
         address[] targets;
         uint256[] values;
@@ -54,19 +54,19 @@ abstract contract GovernorStorageEnumIdsUpgradeable is Initializable, GovernorUp
     /// @dev Hook into the proposing mechanism, but creates proposalId using an enumeration from storage,
     /// and creates a mapping between the hashed proposalId and the enumerated proposalId.
     function _propose(
-        address[] memory targets,
-        uint256[] memory values,
-        bytes[] memory calldatas,
-        string memory description,
+        address[] memory _targets,
+        uint256[] memory _values,
+        bytes[] memory _calldatas,
+        string memory _description,
         address proposer
     ) internal virtual override returns (uint256 proposalId) {
         GovernorStorageEnumIdsStorage storage $ = _getGovernorStorageEnumIdsStorage();
         proposalId = $._nextProposalId;
         ProposalDetails memory details = ProposalDetails({
-            targets: targets,
-            values: values,
-            calldatas: calldatas,
-            descriptionHash: keccak256(bytes(description))
+            targets: _targets,
+            values: _values,
+            calldatas: _calldatas,
+            descriptionHash: keccak256(bytes(_description))
         });
 
         // store
@@ -74,65 +74,66 @@ abstract contract GovernorStorageEnumIdsUpgradeable is Initializable, GovernorUp
         $._proposalDetails[proposalId] = details;
         $._nextProposalId += 1;
 
-        uint256 hashedProposalId = super._propose(targets, values, calldatas, description, proposer);
+        uint256 hashedProposalId = super._propose(_targets, _values, _calldatas, _description, proposer);
         $._proposalIdToHashedId[proposalId] = hashedProposalId;
     }
 
     /// @inheritdoc GovernorUpgradeable
     /// @dev We override this function to map the externally-used enumerated proposal ID the
     /// hashed proposal ID needed by the GovernorUpgradeable _castVote function.
-    function _castVote(uint256 proposalId, address account, uint8 support, string memory reason, bytes memory params)
-        internal
-        virtual
-        override(GovernorUpgradeable)
-        returns (uint256)
-    {
+    function _castVote(
+        uint256 _proposalId,
+        address _account,
+        uint8 _support,
+        string memory _reason,
+        bytes memory _params
+    ) internal virtual override(GovernorUpgradeable) returns (uint256) {
         GovernorStorageEnumIdsStorage storage $ = _getGovernorStorageEnumIdsStorage();
-        uint256 hashedProposalId = $._proposalIdToHashedId[proposalId];
-        return GovernorUpgradeable._castVote(hashedProposalId, account, support, reason, params);
+        uint256 _hashedProposalId = $._proposalIdToHashedId[_proposalId];
+        return GovernorUpgradeable._castVote(_hashedProposalId, _account, _support, _reason, _params);
     }
 
     /// @notice Version of {IGovernor-queue} with only enumerated `proposalId` as an argument.
-    /// @param proposalId The enumerated proposal ID.
+    /// @param _proposalId The enumerated proposal ID.
     /// @dev Uses the externally-used enumerated proposal ID to find the proposal details
     /// needed by the GovernorUpgradeable queue function.
-    function queue(uint256 proposalId) public virtual {
-        (address[] memory targets, uint256[] memory values, bytes[] memory calldatas, bytes32 descriptionHash) =
-            proposalDetails(proposalId);
-        GovernorUpgradeable.queue(targets, values, calldatas, descriptionHash);
+    function queue(uint256 _proposalId) public virtual {
+        (address[] memory _targets, uint256[] memory _values, bytes[] memory _calldatas, bytes32 _descriptionHash) =
+            proposalDetails(_proposalId);
+        GovernorUpgradeable.queue(_targets, _values, _calldatas, _descriptionHash);
     }
 
     /// @notice Version of {IGovernor-execute} with only enumerated `proposalId` as an argument.
-    /// @param proposalId The enumerated proposal ID.
+    /// @param _proposalId The enumerated proposal ID.
     /// @dev Uses the externally-used enumerated proposal ID to find the proposal details
     /// needed by the GovernorUpgradeable execute function.
-    function execute(uint256 proposalId) public payable virtual {
-        (address[] memory targets, uint256[] memory values, bytes[] memory calldatas, bytes32 descriptionHash) =
-            proposalDetails(proposalId);
-        GovernorUpgradeable.execute(targets, values, calldatas, descriptionHash);
+    function execute(uint256 _proposalId) public payable virtual {
+        (address[] memory _targets, uint256[] memory _values, bytes[] memory _calldatas, bytes32 _descriptionHash) =
+            proposalDetails(_proposalId);
+        GovernorUpgradeable.execute(_targets, _values, _calldatas, _descriptionHash);
     }
 
     /// @notice Version of {IGovernor-cancel} with only enumerated `proposalId` as an argument.
-    /// @param proposalId The enumerated proposal ID.
+    /// @param _proposalId The enumerated proposal ID.
     /// @dev Uses the externally-used enumerated proposal ID to find the proposal details
     /// needed by the GovernorUpgradeable cancel function.
-    function cancel(uint256 proposalId) public virtual {
-        (address[] memory targets, uint256[] memory values, bytes[] memory calldatas, bytes32 descriptionHash) =
-            proposalDetails(proposalId);
-        GovernorUpgradeable.cancel(targets, values, calldatas, descriptionHash);
+    function cancel(uint256 _proposalId) public virtual {
+        (address[] memory _targets, uint256[] memory _values, bytes[] memory _calldatas, bytes32 _descriptionHash) =
+            proposalDetails(_proposalId);
+        GovernorUpgradeable.cancel(_targets, _values, _calldatas, _descriptionHash);
     }
 
     /// @inheritdoc GovernorUpgradeable
     /// @dev We override this function support both external(enumerated) and internal(hashed) proposal IDs.
     /// When called by external function, `proposalId` should be the enumerated proposalId.
     /// When called by internal governor functions, `proposalId` parameter is the hashed proposalId.
-    function state(uint256 proposalId) public view virtual override returns (ProposalState) {
+    function state(uint256 _proposalId) public view virtual override returns (ProposalState) {
         GovernorStorageEnumIdsStorage storage $ = _getGovernorStorageEnumIdsStorage();
-        uint256 hashedProposalId = $._proposalIdToHashedId[proposalId];
-        if (hashedProposalId == 0) {
-            hashedProposalId = proposalId;
+        uint256 _hashedProposalId = $._proposalIdToHashedId[_proposalId];
+        if (_hashedProposalId == 0) {
+            _hashedProposalId = _proposalId;
         }
-        return super.state(hashedProposalId);
+        return super.state(_hashedProposalId);
     }
 
     /// @notice Returns the number of stored proposals.
@@ -143,38 +144,37 @@ abstract contract GovernorStorageEnumIdsUpgradeable is Initializable, GovernorUp
     }
 
     /// @notice Returns the details of a proposalId. Reverts if `proposalId` is not a known proposal.
-    /// @param proposalId The enumerated proposal ID.
-    function proposalDetails(uint256 proposalId)
+    /// @param _proposalId The enumerated proposal ID.
+    function proposalDetails(uint256 _proposalId)
         public
         view
         virtual
-        returns (address[] memory targets, uint256[] memory values, bytes[] memory calldatas, bytes32 descriptionHash)
+        returns (address[] memory, uint256[] memory, bytes[] memory, bytes32)
     {
         GovernorStorageEnumIdsStorage storage $ = _getGovernorStorageEnumIdsStorage();
-        // here, using memory is more efficient than storage
-        ProposalDetails memory details = $._proposalDetails[proposalId];
-        if (details.descriptionHash == 0) {
-            revert GovernorNonexistentProposal(proposalId);
+        ProposalDetails memory _details = $._proposalDetails[_proposalId];
+        if (_details.descriptionHash == 0) {
+            revert GovernorNonexistentProposal(_proposalId);
         }
-        return (details.targets, details.values, details.calldatas, details.descriptionHash);
+        return (_details.targets, _details.values, _details.calldatas, _details.descriptionHash);
     }
 
     /// @notice Returns the details (including the proposalId) of a proposal given its sequential index.
-    /// @param index The index of the proposal.
-    function proposalDetailsAt(uint256 index)
+    /// @param _index The index of the proposal.
+    function proposalDetailsAt(uint256 _index)
         public
         view
         virtual
         returns (
-            uint256 proposalId,
-            address[] memory targets,
-            uint256[] memory values,
-            bytes[] memory calldatas,
-            bytes32 descriptionHash
+            uint256 _proposalId,
+            address[] memory _targets,
+            uint256[] memory _values,
+            bytes[] memory _calldatas,
+            bytes32 _descriptionHash
         )
     {
         GovernorStorageEnumIdsStorage storage $ = _getGovernorStorageEnumIdsStorage();
-        proposalId = $._proposalIds[index];
-        (targets, values, calldatas, descriptionHash) = proposalDetails(proposalId);
+        _proposalId = $._proposalIds[_index];
+        (_targets, _values, _calldatas, _descriptionHash) = proposalDetails(_proposalId);
     }
 }
