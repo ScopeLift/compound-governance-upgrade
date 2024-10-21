@@ -76,7 +76,7 @@ contract CompoundGovernor is
     /// timestamp.
     ProposalGuardian public proposalGuardian;
 
-    /// @notice Stores the expiration of account whitelist status as a timestamp
+    /// @notice Stores the expiration of account whitelist status as a timestamp.
     mapping(address account => uint256 timestamp) public whitelistAccountExpirations;
 
     /// @notice Disables the initialize function.
@@ -117,9 +117,9 @@ contract CompoundGovernor is
     }
 
     /// @notice Sets or updates the whitelist expiration for a specific account.
-    /// @dev A whitelisted account's proposals cannot be canceled by anyone except the `whitelistGuardian` when its
+    /// @notice A whitelisted account's proposals cannot be canceled by anyone except the `whitelistGuardian` when its
     /// voting weight falls below the `proposalThreshold`.
-    /// @dev The whitelist account and `proposalGuardian` can still cancel its proposals regardless of voting weight.
+    /// @notice The whitelist account and `proposalGuardian` can still cancel its proposals regardless of voting weight.
     /// @dev Only the executor (timelock) or the `whitelistGuardian` can call this function.
     /// @param _account The address of the account to be whitelisted.
     /// @param _expiration The timestamp until which the account will be whitelisted.
@@ -133,9 +133,9 @@ contract CompoundGovernor is
     }
 
     /// @notice Checks if an account is currently whitelisted.
-    /// @dev Only a `whitelistGuardian` can cancel a whitelisted account's proposal for falling below
+    /// @notice Only a `whitelistGuardian` can cancel a whitelisted account's proposal for falling below
     /// `proposalThreshold`.
-    /// @dev The proposer and proposalGuardian can still cancel a whitelisted account's proposal regardless of voting
+    /// @notice The proposer and proposalGuardian can still cancel a whitelisted account's proposal regardless of voting
     /// weight.
     /// @param _account The address of the account to check.
     /// @return bool Returns true if the account is whitelisted (expiration is in the future), false otherwise.
@@ -144,7 +144,8 @@ contract CompoundGovernor is
     }
 
     /// @notice Sets a new `whitelistGuardian`.
-    /// @dev a `whitelistGuardian` can whitelist accounts and can cancel whitelisted accounts' proposals when they fall
+    /// @notice a `whitelistGuardian` can whitelist accounts and can cancel whitelisted accounts' proposals when they
+    /// fall.
     /// below `proposalThreshold.
     /// @dev Only the executor (timelock) can call this function.
     /// @param _newWhitelistGuardian The address of the new `whitelistGuardian`.
