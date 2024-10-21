@@ -149,9 +149,7 @@ contract CompoundGovernor is
     /// @dev Only the executor (timelock) can call this function.
     /// @param _newWhitelistGuardian The address of the new `whitelistGuardian`.
     function setWhitelistGuardian(address _newWhitelistGuardian) external {
-        if (msg.sender != _executor()) {
-            revert Unauthorized("Not timelock", msg.sender);
-        }
+        _checkGovernance();
         _setWhitelistGuardian(_newWhitelistGuardian);
     }
 
@@ -159,9 +157,7 @@ contract CompoundGovernor is
     /// @dev This function can only be called by the executor (timelock).
     /// @param _newProposalGuardian The new proposal guardian to be set, including their address and expiration.
     function setProposalGuardian(ProposalGuardian memory _newProposalGuardian) external {
-        if (msg.sender != _executor()) {
-            revert Unauthorized("Not timelock", msg.sender);
-        }
+        _checkGovernance();
         _setProposalGuardian(_newProposalGuardian);
     }
 
