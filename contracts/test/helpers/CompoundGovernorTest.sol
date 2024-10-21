@@ -15,6 +15,7 @@ contract CompoundGovernorTest is Test, CompoundGovernorConstants {
     address owner;
     address whitelistGuardian;
     CompoundGovernor.ProposalGuardian proposalGuardian;
+    uint96 constant PROPOSAL_GUARDIAN_EXPIRY = 1_739_768_400;
 
     function setUp() public virtual {
         // set the owner of the governor (use the anvil default account #0, if no environment variable is set)
