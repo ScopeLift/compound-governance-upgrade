@@ -21,10 +21,12 @@ contract DeployCompoundGovernor is Script, CompoundGovernorConstants {
         );
     }
 
-    function run(address _owner, address _whitelistGuardian, CompoundGovernor.ProposalGuardian memory _proposalGuardian)
-        public
-        returns (CompoundGovernor _governor)
-    {
+    function run(
+        address _owner,
+        address _proxyAdmin,
+        address _whitelistGuardian,
+        CompoundGovernor.ProposalGuardian memory _proposalGuardian
+    ) public returns (CompoundGovernor _governor) {
         vm.startBroadcast(deployerPrivateKey);
 
         // Deploy Governor implementation contract
@@ -46,7 +48,7 @@ contract DeployCompoundGovernor is Script, CompoundGovernorConstants {
             )
         );
         TransparentUpgradeableProxy _proxy =
-            new TransparentUpgradeableProxy(address(_implementation), address(this), _initData);
+            new TransparentUpgradeableProxy(address(_implementation), _proxyAdmin, _initData);
         _governor = CompoundGovernor(payable(address(_proxy)));
 
         vm.stopBroadcast();
