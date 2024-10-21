@@ -327,10 +327,10 @@ contract CompoundGovernor is
         public
         view
         virtual
-        override(GovernorUpgradeable, GovernorTimelockCompoundUpgradeable, GovernorStorageEnumIdsUpgradeable)
+        override(GovernorUpgradeable, GovernorTimelockCompoundUpgradeable)
         returns (ProposalState)
     {
-        return GovernorStorageEnumIdsUpgradeable.state(_proposalId);
+        return GovernorTimelockCompoundUpgradeable.state(_proposalId);
     }
 
     /// @inheritdoc GovernorStorageEnumIdsUpgradeable
