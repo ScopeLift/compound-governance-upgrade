@@ -42,7 +42,6 @@ contract CompoundGovernor is
     /// @param newGuardian The address of the new whitelistGuardian.
     event WhitelistGuardianSet(address oldGuardian, address newGuardian);
 
-    /// @notice Emitted when the proposalGuardian is set
     /// @notice Emitted when the proposal guardian is set or updated.
     /// @param oldProposalGuardian The address of the previous proposal guardian.
     /// @param oldProposalGuardianExpiry The expiration timestamp of the previous proposal guardian's role.
@@ -60,6 +59,14 @@ contract CompoundGovernor is
     /// @param caller The address that attempted the unauthorized action.
     error Unauthorized(bytes32 reason, address caller);
 
+    /// @notice The address and expiration of the proposal guardian.
+    struct ProposalGuardian {
+        // Address of the `ProposalGuardian`
+        address account;
+        // Timestamp at which the guardian loses the ability to cancel proposals
+        uint96 expiration;
+    }
+
     /// @notice Address which manages whitelisted proposals and whitelist accounts.
     /// @dev This address has the ability to set account whitelist expirations and can be changed through the governance
     /// process.
@@ -71,14 +78,6 @@ contract CompoundGovernor is
 
     /// @notice Stores the expiration of account whitelist status as a timestamp
     mapping(address account => uint256 timestamp) public whitelistAccountExpirations;
-
-    /// @notice The address and expiration of the proposal guardian.
-    struct ProposalGuardian {
-        // Address of the `ProposalGuardian`
-        address account;
-        // Timestamp at which the guardian loses the ability to cancel proposals
-        uint96 expiration;
-    }
 
     /// @notice Disables the initialize function.
     constructor() {
@@ -133,14 +132,14 @@ contract CompoundGovernor is
     /// @notice Checks if an account is currently whitelisted.
     /// @param _account The address of the account to check.
     /// @return bool Returns true if the account is whitelisted (expiration is in the future), false otherwise.
-    function isWhitelisted(address _account) public view returns (bool) {
+    function isWhitelisted(address _account) external view returns (bool) {
         return (whitelistAccountExpirations[_account] > block.timestamp);
     }
 
     /// @notice Sets a new whitelistGuardian.
     /// @param _newWhitelistGuardian The address of the new whitelistGuardian.
     /// @dev Only the executor (timelock) can call this function.
-    function setWhitelistGuardian(address _newWhitelistGuardian) public {
+    function setWhitelistGuardian(address _newWhitelistGuardian) external {
         if (msg.sender != _executor()) {
             revert Unauthorized("Not timelock", msg.sender);
         }

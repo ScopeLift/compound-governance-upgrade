@@ -19,7 +19,7 @@ contract CompoundGovernorTest is Test, CompoundGovernorConstants {
     function setUp() public virtual {
         // set the owner of the governor (use the anvil default account #0, if no environment variable is set)
         owner = vm.envOr("DEPLOYER_ADDRESS", 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266);
-        whitelistGuardian = vm.envOr("WHITELIST_GUARDIAN_ADDRESS", 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266);
+        whitelistGuardian = makeAddr("WHITELIST_GUARDIAN_ADDRESS");
         proposalGuardian = CompoundGovernor.ProposalGuardian(COMMUNITY_MULTISIG_ADDRESS, PROPOSAL_GUARDIAN_EXPIRY);
         // set the RPC URL and the fork block number to create a local execution fork for testing
         vm.createSelectFork(vm.envOr("RPC_URL", string("Please set RPC_URL in your .env file")), FORK_BLOCK);
