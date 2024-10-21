@@ -34,19 +34,22 @@ contract CompoundGovernorSetProposalGuardianTest is ProposalTest {
     }
 
     function testFuzz_EmitsEventWhenAProposalGuardianIsSetByTheTimelock(
-        CompoundGovernor.ProposalGuardian memory _proposalGuardian
+        CompoundGovernor.ProposalGuardian memory _proposalGuardian,
+        address _caller
     ) public {
         (address _currentAccount, uint96 _currentExpiration) = governor.proposalGuardian();
         Proposal memory _proposal = _buildSetProposalGuardianProposal(_proposalGuardian);
-        _submitPassAndQueProposal(delegatee, _proposal);
+        _submitPassAndQueueProposal(delegatee, _proposal);
 
         vm.expectEmit();
         emit CompoundGovernor.ProposalGuardianSet(
             _currentAccount, _currentExpiration, _proposalGuardian.account, _proposalGuardian.expiration
         );
 
-        vm.prank(TIMELOCK_ADDRESS);
-        governor.execute(_proposal.targets, _proposal.values, _proposal.calldatas, keccak256(bytes(_proposal.description)));
+        vm.prank(_caller);
+        governor.execute(
+            _proposal.targets, _proposal.values, _proposal.calldatas, keccak256(bytes(_proposal.description))
+        );
     }
 
     function testFuzz_RevertIf_CallerIsNotTimelock(

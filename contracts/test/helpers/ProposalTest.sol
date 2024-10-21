@@ -89,7 +89,7 @@ contract ProposalTest is CompoundGovernorTest {
         vm.roll(vm.getBlockNumber() + INITIAL_VOTING_PERIOD + 1);
     }
 
-    function _submitPassAndQueProposal(address _proposer, Proposal memory _proposal) public {
+    function _submitPassAndQueueProposal(address _proposer, Proposal memory _proposal) public {
         uint256 _proposalId = _submitProposal(_proposer, _proposal);
         _passAndQueueProposal(_proposal, _proposalId);
     }

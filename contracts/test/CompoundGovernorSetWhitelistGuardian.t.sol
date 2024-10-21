@@ -29,14 +29,14 @@ contract CompoundGovernorSetWhitelistGuardianTest is ProposalTest {
         assertEq(governor.whitelistGuardian(), _whitelistGuardian);
     }
 
-    function testFuzz_EmitsEventWhenAWhitelistGuardianIsSet(address _whitelistGuardian) public {
+    function testFuzz_EmitsEventWhenAWhitelistGuardianIsSet(address _whitelistGuardian, address _caller) public {
         Proposal memory _proposal = _buildSetWhitelistGuardianProposal(_whitelistGuardian);
-        _submitPassAndQueProposal(delegatee, _proposal);
+        _submitPassAndQueueProposal(delegatee, _proposal);
 
         vm.expectEmit();
         emit CompoundGovernor.WhitelistGuardianSet(governor.whitelistGuardian(), _whitelistGuardian);
 
-        vm.prank(TIMELOCK_ADDRESS);
+        vm.prank(_caller);
         governor.execute(
             _proposal.targets, _proposal.values, _proposal.calldatas, keccak256(bytes(_proposal.description))
         );
