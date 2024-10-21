@@ -37,6 +37,7 @@ contract CompoundGovernorSetProposalGuardianTest is ProposalTest {
         CompoundGovernor.ProposalGuardian memory _proposalGuardian,
         address _caller
     ) public {
+        vm.assume(_caller != PROXY_ADMIN_ADDRESS);
         (address _currentAccount, uint96 _currentExpiration) = governor.proposalGuardian();
         Proposal memory _proposal = _buildSetProposalGuardianProposal(_proposalGuardian);
         _submitPassAndQueueProposal(delegatee, _proposal);

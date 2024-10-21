@@ -30,6 +30,7 @@ contract CompoundGovernorSetWhitelistGuardianTest is ProposalTest {
     }
 
     function testFuzz_EmitsEventWhenAWhitelistGuardianIsSet(address _whitelistGuardian, address _caller) public {
+        vm.assume(_caller != PROXY_ADMIN_ADDRESS);
         Proposal memory _proposal = _buildSetWhitelistGuardianProposal(_whitelistGuardian);
         _submitPassAndQueueProposal(delegatee, _proposal);
 
