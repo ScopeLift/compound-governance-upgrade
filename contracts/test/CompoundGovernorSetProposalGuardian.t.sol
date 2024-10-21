@@ -5,7 +5,7 @@ import {ProposalTest} from "contracts/test/helpers/ProposalTest.sol";
 import {IGovernor} from "@openzeppelin/contracts/governance/IGovernor.sol";
 import {CompoundGovernor} from "contracts/CompoundGovernor.sol";
 
-contract CompoundGovernorIsWhitelistedTest is ProposalTest {
+contract CompoundGovernorSetProposalGuardianTest is ProposalTest {
     function testFuzz_SetsProposalGuardianAsTimelock(CompoundGovernor.ProposalGuardian memory _proposalGuardian)
         public
     {
@@ -32,7 +32,7 @@ contract CompoundGovernorIsWhitelistedTest is ProposalTest {
         CompoundGovernor.ProposalGuardian memory _proposalGuardian,
         address _caller
     ) public {
-        vm.assume(_caller != TIMELOCK_ADDRESS);
+        vm.assume(_caller != TIMELOCK_ADDRESS && _caller != PROXY_ADMIN_ADDRESS);
         vm.expectRevert(
             abi.encodeWithSelector(CompoundGovernor.Unauthorized.selector, bytes32("Not timelock"), _caller)
         );

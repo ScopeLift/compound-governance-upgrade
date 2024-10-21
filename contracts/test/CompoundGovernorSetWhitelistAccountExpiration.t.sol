@@ -32,7 +32,10 @@ contract CompoundGovernorSetWhitelistAccountExpirationTest is ProposalTest {
         uint256 _expiration,
         address _caller
     ) public {
-        vm.assume(_caller != TIMELOCK_ADDRESS && _caller != whitelistGuardian && _caller != address(governor));
+        vm.assume(
+            _caller != TIMELOCK_ADDRESS && _caller != whitelistGuardian && _caller != address(governor)
+                && _caller != PROXY_ADMIN_ADDRESS
+        );
         vm.prank(_caller);
 
         vm.expectRevert(

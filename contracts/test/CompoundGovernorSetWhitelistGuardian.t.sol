@@ -21,7 +21,7 @@ contract CompoundGovernorSetWhitelistGuardianTest is ProposalTest {
     }
 
     function testFuzz_RevertIf_CallerIsNotTimelock(address _whitelistGuardian, address _caller) public {
-        vm.assume(_caller != TIMELOCK_ADDRESS);
+        vm.assume(_caller != TIMELOCK_ADDRESS && _caller != PROXY_ADMIN_ADDRESS);
         vm.expectRevert(
             abi.encodeWithSelector(CompoundGovernor.Unauthorized.selector, bytes32("Not timelock"), _caller)
         );

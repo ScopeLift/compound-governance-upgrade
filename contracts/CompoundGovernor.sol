@@ -117,9 +117,12 @@ contract CompoundGovernor is
     }
 
     /// @notice Sets or updates the whitelist expiration for a specific account.
+    /// @dev A whitelisted account's proposals cannot be canceled by anyone except the `whitelistGuardian` when its
+    /// voting weight falls below the `proposalThreshold`.
+    /// @dev The whitelist account and `proposalGuardian` can still cancel its proposals regardless of voting weight.
+    /// @dev Only the executor (timelock) or the `whitelistGuardian` can call this function.
     /// @param _account The address of the account to be whitelisted.
     /// @param _expiration The timestamp until which the account will be whitelisted.
-    /// @dev Only the executor (timelock) or the whitelistGuardian can call this function.
     function setWhitelistAccountExpiration(address _account, uint256 _expiration) external {
         if (msg.sender != _executor() && msg.sender != whitelistGuardian) {
             revert Unauthorized("Not timelock or guardian", msg.sender);
@@ -130,15 +133,21 @@ contract CompoundGovernor is
     }
 
     /// @notice Checks if an account is currently whitelisted.
+    /// @dev Only a `whitelistGuardian` can cancel a whitelisted account's proposal for falling below
+    /// `proposalThreshold`.
+    /// @dev The proposer and proposalGuardian can still cancel a whitelisted account's proposal regardless of voting
+    /// weight.
     /// @param _account The address of the account to check.
     /// @return bool Returns true if the account is whitelisted (expiration is in the future), false otherwise.
     function isWhitelisted(address _account) external view returns (bool) {
         return (whitelistAccountExpirations[_account] > block.timestamp);
     }
 
-    /// @notice Sets a new whitelistGuardian.
-    /// @param _newWhitelistGuardian The address of the new whitelistGuardian.
+    /// @notice Sets a new `whitelistGuardian`.
+    /// @dev a `whitelistGuardian` can whitelist accounts and can cancel whitelisted accounts' proposals when they fall
+    /// below `proposalThreshold.
     /// @dev Only the executor (timelock) can call this function.
+    /// @param _newWhitelistGuardian The address of the new `whitelistGuardian`.
     function setWhitelistGuardian(address _newWhitelistGuardian) external {
         if (msg.sender != _executor()) {
             revert Unauthorized("Not timelock", msg.sender);
