@@ -128,12 +128,10 @@ abstract contract GovernorStorageEnumIdsUpgradeable is Initializable, GovernorUp
     /// When called by external function, `proposalId` should be the enumerated proposalId.
     /// When called by internal governor functions, `proposalId` parameter is the hashed proposalId.
     function state(uint256 _proposalId) public view virtual override returns (ProposalState) {
-        GovernorStorageEnumIdsStorage storage $ = _getGovernorStorageEnumIdsStorage();
-        uint256 _hashedProposalId = $._proposalIdToHashedId[_proposalId];
-        if (_hashedProposalId == 0) {
-            _hashedProposalId = _proposalId;
-        }
-        return super.state(_hashedProposalId);
+        uint256 hashedProposalId = _getGovernorStorageEnumIdsStorage()._proposalIdToHashedId[_proposalId];
+
+        // Directly use the original proposal ID if the hashed proposal ID is not found
+        return super.state(hashedProposalId == 0 ? _proposalId : hashedProposalId);
     }
 
     /// @notice Returns the number of stored proposals.
