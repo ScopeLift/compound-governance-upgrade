@@ -67,7 +67,7 @@ contract ProposalTest is CompoundGovernorTest {
         vm.warp(block.timestamp + _timeLockDelay + 1);
     }
 
-    function _passQueueAndExecuteProposal(Proposal memory _proposal, uint256 _proposalId) public {
+    function _passQueueAndExecuteProposal(uint256 _proposalId) public {
         uint256 _timeLockDelay = timelock.delay();
         vm.prank(delegatee);
         governor.castVote(_proposalId, uint8(GovernorCountingSimpleUpgradeable.VoteType.For));

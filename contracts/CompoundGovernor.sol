@@ -106,13 +106,13 @@ contract CompoundGovernor is
         uint48 _initialVoteExtension,
         address _initialOwner,
         address _whitelistGuardian,
-        ProposalGuardian calldata _proposalGuardian,
-        uint256 _startingProposalId
+        ProposalGuardian calldata _proposalGuardian
+        // uint256 _startingProposalId
     ) public initializer {
         __Governor_init("Compound Governor");
         __GovernorSettings_init(_initialVotingDelay, _initialVotingPeriod, _initialProposalThreshold);
         __GovernorVotesComp_init(_compAddress);
-        __GovernorStorageEnumIds_init(_startingProposalId);
+        __GovernorStorageEnumIds_init(340); // this was _startingProposalId.. commented out to avoid stack-to-deep error
         __GovernorTimelockCompound_init(_timelockAddress);
         __GovernorPreventLateQuorum_init(_initialVoteExtension);
         __GovernorSettableFixedQuorum_init(_quorumVotes);
@@ -327,10 +327,10 @@ contract CompoundGovernor is
         public
         view
         virtual
-        override(GovernorUpgradeable, GovernorTimelockCompoundUpgradeable)
+        override(GovernorUpgradeable, GovernorTimelockCompoundUpgradeable, GovernorStorageEnumIdsUpgradeable)
         returns (ProposalState)
     {
-        return GovernorTimelockCompoundUpgradeable.state(_proposalId);
+        return GovernorStorageEnumIdsUpgradeable.state(_proposalId);
     }
 
     /// @inheritdoc GovernorStorageEnumIdsUpgradeable

@@ -28,9 +28,9 @@ contract DeployCompoundGovernor is Script, CompoundGovernorConstants {
         public
         returns (CompoundGovernor _governor)
     {
-        GovernorBravoDelegateStorageV1 _governorBravoStorage =
-            GovernorBravoDelegateStorageV1(GOVERNOR_BRAVO_DELEGATE_ADDRESS);
-        uint256 _startingProposalId = _governorBravoStorage.proposalCount();
+        // GovernorBravoDelegateStorageV1 _governorBravoStorage =
+        //     GovernorBravoDelegateStorageV1(GOVERNOR_BRAVO_DELEGATE_ADDRESS);
+        // uint256 _startingProposalId = _governorBravoStorage.proposalCount();
 
         vm.startBroadcast(deployerPrivateKey);
 
@@ -49,8 +49,8 @@ contract DeployCompoundGovernor is Script, CompoundGovernorConstants {
                 INITIAL_VOTE_EXTENSION,
                 _owner,
                 _whitelistGuardian,
-                _proposalGuardian,
-                _startingProposalId
+                _proposalGuardian
+                // _startingProposalId // commented out to avoid stack-to-deep error
             )
         );
         TransparentUpgradeableProxy _proxy =
