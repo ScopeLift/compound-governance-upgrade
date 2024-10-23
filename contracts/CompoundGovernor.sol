@@ -107,8 +107,11 @@ contract CompoundGovernor is
         address _initialOwner,
         address _whitelistGuardian,
         ProposalGuardian calldata _proposalGuardian
+    )
         // uint256 _startingProposalId
-    ) public initializer {
+        public
+        initializer
+    {
         __Governor_init("Compound Governor");
         __GovernorSettings_init(_initialVotingDelay, _initialVotingPeriod, _initialProposalThreshold);
         __GovernorVotesComp_init(_compAddress);

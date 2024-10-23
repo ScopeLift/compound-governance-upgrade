@@ -50,9 +50,10 @@ contract DeployCompoundGovernor is Script, CompoundGovernorConstants {
                 _owner,
                 _whitelistGuardian,
                 _proposalGuardian
-                // _startingProposalId // commented out to avoid stack-to-deep error
             )
         );
+        // _startingProposalId // commented out to avoid stack-to-deep error
+
         TransparentUpgradeableProxy _proxy =
             new TransparentUpgradeableProxy(address(_implementation), TIMELOCK_ADDRESS, _initData);
         _governor = CompoundGovernor(payable(address(_proxy)));

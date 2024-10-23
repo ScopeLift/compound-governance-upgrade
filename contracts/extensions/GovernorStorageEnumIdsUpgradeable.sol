@@ -11,9 +11,7 @@ import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 /// @notice Modified GovernorStorageUpgradeable contract that provides enumerable proposal IDs.
 /// @custom:security-contact TODO: Add security contact
 abstract contract GovernorStorageEnumIdsUpgradeable is Initializable, GovernorUpgradeable {
-
     /// @dev Storage structure to store proposal details.
-
     struct ProposalDetails {
         address[] targets;
         uint256[] values;
@@ -50,7 +48,8 @@ abstract contract GovernorStorageEnumIdsUpgradeable is Initializable, GovernorUp
     }
 
     // keccak256(abi.encode(uint256(keccak256("openzeppelin.storage.Governor")) - 1)) & ~bytes32(uint256(0xff))
-    bytes32 private constant GovernorStorageLocation = 0x7c712897014dbe49c045ef1299aa2d5f9e67e48eea4403efa21f1e0f3ac0cb00;
+    bytes32 private constant GovernorStorageLocation =
+        0x7c712897014dbe49c045ef1299aa2d5f9e67e48eea4403efa21f1e0f3ac0cb00;
 
     function _getGovernorUpgradeableStorage() private pure returns (GovernorStorage storage $) {
         assembly {
@@ -58,78 +57,58 @@ abstract contract GovernorStorageEnumIdsUpgradeable is Initializable, GovernorUp
         }
     }
 
-    /**
-     * @dev Internal propose mechanism. Can be overridden to add more logic on proposal creation.
-     *
-     * Emits a {IGovernor-ProposalCreated} event.
-     */
-    function _proposeAndEmitEnumeratedProposalId(
-        address[] memory targets,
-        uint256[] memory values,
-        bytes[] memory calldatas,
-        string memory description,
-        address proposer,
-        uint256 enumeratedProposalId
-    ) internal returns (uint256 proposalId) {
-        GovernorStorage storage $ = _getGovernorUpgradeableStorage();
-        proposalId = hashProposal(targets, values, calldatas, keccak256(bytes(description)));
-
-        if (targets.length != values.length || targets.length != calldatas.length || targets.length == 0) {
-            revert GovernorInvalidProposalLength(targets.length, calldatas.length, values.length);
-        }
-        if ($._proposals[proposalId].voteStart != 0) {
-            revert GovernorUnexpectedProposalState(proposalId, state(proposalId), bytes32(0));
-        }
-
-        uint256 snapshot = clock() + votingDelay();
-        uint256 duration = votingPeriod();
-
-        ProposalCore storage proposal = $._proposals[proposalId];
-        proposal.proposer = proposer;
-        proposal.voteStart = SafeCast.toUint48(snapshot);
-        proposal.voteDuration = SafeCast.toUint32(duration);
-
-        emit ProposalCreated(
-            enumeratedProposalId,
-            proposer,
-            targets,
-            values,
-            new string[](targets.length),
-            calldatas,
-            snapshot,
-            snapshot + duration,
-            description
-        );
-
-        // Using a named return variable to avoid stack too deep errors
-    }
-
     /// @inheritdoc GovernorUpgradeable
-    /// @dev Hook into the proposing mechanism, but creates proposalId using an enumeration from storage,
-    /// and creates a mapping between the hashed proposalId and the enumerated proposalId.
+    /// @dev Overrides the proposing mechanism, to create an enumerated proposal ID from storage,
+    /// and emits that enumerated proposal ID in the ProposalCreated event, while also creating
+    /// a hashed proposal ID for use by the GovernorUpgradeable parent contract.
+    /// Also creates a mapping between the hashed proposal ID and the enumerated proposal ID.
     function _propose(
         address[] memory _targets,
         uint256[] memory _values,
         bytes[] memory _calldatas,
         string memory _description,
         address proposer
-    ) internal virtual override returns (uint256 proposalId) {
+    ) internal virtual override returns (uint256 _proposalId) {
         GovernorStorageEnumIdsStorage storage $ = _getGovernorStorageEnumIdsStorage();
-        proposalId = $._nextProposalId;
-        ProposalDetails memory details = ProposalDetails({
+        _proposalId = $._nextProposalId;
+        uint256 _hashedProposalId = hashProposal(_targets, _values, _calldatas, keccak256(bytes(_description)));
+
+        $._proposalIds.push(_proposalId);
+        $._proposalDetails[_proposalId] = ProposalDetails({
             targets: _targets,
             values: _values,
             calldatas: _calldatas,
             descriptionHash: keccak256(bytes(_description))
         });
-
-        // store
-        $._proposalIds.push(proposalId);
-        $._proposalDetails[proposalId] = details;
+        $._proposalIdToHashedId[_proposalId] = _hashedProposalId;
         $._nextProposalId += 1;
 
-        uint256 hashedProposalId = _proposeAndEmitEnumeratedProposalId(_targets, _values, _calldatas, _description, proposer, proposalId);
-        $._proposalIdToHashedId[proposalId] = hashedProposalId;
+        if (_targets.length != _values.length || _targets.length != _calldatas.length || _targets.length == 0) {
+            revert GovernorInvalidProposalLength(_targets.length, _calldatas.length, _values.length);
+        }
+        if (_getGovernorUpgradeableStorage()._proposals[_hashedProposalId].voteStart != 0) {
+            revert GovernorUnexpectedProposalState(_hashedProposalId, state(_hashedProposalId), bytes32(0));
+        }
+
+        uint256 snapshot = clock() + votingDelay();
+
+        ProposalCore storage proposal = _getGovernorUpgradeableStorage()._proposals[_hashedProposalId];
+        proposal.proposer = proposer;
+        proposal.voteStart = SafeCast.toUint48(snapshot);
+        proposal.voteDuration = SafeCast.toUint32(votingPeriod());
+
+        emit ProposalCreated(
+            _proposalId,
+            proposer,
+            _targets,
+            _values,
+            new string[](_targets.length),
+            _calldatas,
+            snapshot,
+            snapshot + votingPeriod(),
+            _description
+        );
+        $._proposalIdToHashedId[_proposalId] = _hashedProposalId;
     }
 
     /// @inheritdoc GovernorUpgradeable
