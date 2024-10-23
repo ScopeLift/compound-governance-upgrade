@@ -14,6 +14,12 @@ contract CompoundGovernorCancelTest is ProposalTest {
         _proposal = Proposal(_targets, _values, _calldatas, "An Empty Proposal");
     }
 
+    function _getProposalId(Proposal memory _proposal) private view returns (uint256) {
+        return governor.hashProposal(
+            _proposal.targets, _proposal.values, _proposal.calldatas, keccak256(bytes(_proposal.description))
+        );
+    }
+
     function _removeDelegateeVotingWeight() private {
         vm.prank(COMPOUND_COMPTROLLER);
         token.delegate(COMPOUND_COMPTROLLER);
@@ -24,9 +30,7 @@ contract CompoundGovernorCancelTest is ProposalTest {
         _randomIndex = bound(_randomIndex, 0, _majorDelegates.length - 1);
         address _proposer = _majorDelegates[_randomIndex];
         Proposal memory _proposal = _buildAnEmptyProposal();
-        uint256 _proposalId = governor.hashProposal(
-            _proposal.targets, _proposal.values, _proposal.calldatas, keccak256(bytes(_proposal.description))
-        );
+        uint256 _proposalId = _getProposalId(_proposal);
         _submitPassAndQueueProposal(_proposer, _proposal);
 
         vm.prank(_proposer);
@@ -40,9 +44,7 @@ contract CompoundGovernorCancelTest is ProposalTest {
         _randomIndex = bound(_randomIndex, 0, _majorDelegates.length - 1);
         address _proposer = _majorDelegates[_randomIndex];
         Proposal memory _proposal = _buildAnEmptyProposal();
-        uint256 _proposalId = governor.hashProposal(
-            _proposal.targets, _proposal.values, _proposal.calldatas, keccak256(bytes(_proposal.description))
-        );
+        uint256 _proposalId = _getProposalId(_proposal);
         _submitPassAndQueueProposal(_proposer, _proposal);
 
         vm.prank(proposalGuardian.account);
@@ -55,9 +57,7 @@ contract CompoundGovernorCancelTest is ProposalTest {
     function testFuzz_AnyoneCanCancelAProposalBelowThreshold(address _caller) public {
         vm.assume(_caller != COMPOUND_COMPTROLLER && _caller != PROXY_ADMIN_ADDRESS);
         Proposal memory _proposal = _buildAnEmptyProposal();
-        uint256 _proposalId = governor.hashProposal(
-            _proposal.targets, _proposal.values, _proposal.calldatas, keccak256(bytes(_proposal.description))
-        );
+        uint256 _proposalId = _getProposalId(_proposal);
         _submitPassAndQueueProposal(delegatee, _proposal);
         _removeDelegateeVotingWeight();
 
@@ -70,9 +70,7 @@ contract CompoundGovernorCancelTest is ProposalTest {
 
     function test_WhitelistGuardianCanCancelWhitelistedProposalBelowThreshold() public {
         Proposal memory _proposal = _buildAnEmptyProposal();
-        uint256 _proposalId = governor.hashProposal(
-            _proposal.targets, _proposal.values, _proposal.calldatas, keccak256(bytes(_proposal.description))
-        );
+        uint256 _proposalId = _getProposalId(_proposal);
         vm.prank(whitelistGuardian);
         governor.setWhitelistAccountExpiration(delegatee, block.timestamp + 2_000_000);
         vm.assertTrue(governor.isWhitelisted(delegatee));
