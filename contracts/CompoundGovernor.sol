@@ -118,8 +118,8 @@ contract CompoundGovernor is
 
     /// @notice Cancels an active proposal.
     /// @notice This function can be called by the proposer, the proposal guardian, or anyone if the proposer's voting
-    /// power has dropped below the proposal threshold. For whitelisted proposers, only the whitelist guardian can
-    /// cancel if the proposer is below the threshold.
+    /// power has dropped below the proposal threshold. For whitelisted only special actors (proposer, proposer
+    /// guardian, whitelist guardian) can cancel if the proposer is below the threshold.
     /// @param targets An array of addresses that will be called if the proposal is executed.
     /// @param values An array of ETH values to be sent to each address when the proposal is executed.
     /// @param calldatas An array of calldata to be sent to each address when the proposal is executed.
