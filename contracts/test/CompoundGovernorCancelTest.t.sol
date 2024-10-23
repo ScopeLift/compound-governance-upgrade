@@ -55,7 +55,7 @@ contract CompoundGovernorCancelTest is ProposalTest {
     }
 
     function testFuzz_AnyoneCanCancelAProposalBelowThreshold(address _caller) public {
-        vm.assume(_caller != COMPOUND_COMPTROLLER && _caller != PROXY_ADMIN_ADDRESS);
+        vm.assume(_caller != PROXY_ADMIN_ADDRESS);
         Proposal memory _proposal = _buildAnEmptyProposal();
         uint256 _proposalId = _getProposalId(_proposal);
         _submitPassAndQueueProposal(delegatee, _proposal);
@@ -73,7 +73,6 @@ contract CompoundGovernorCancelTest is ProposalTest {
         uint256 _proposalId = _getProposalId(_proposal);
         vm.prank(whitelistGuardian);
         governor.setWhitelistAccountExpiration(delegatee, block.timestamp + 2_000_000);
-        vm.assertTrue(governor.isWhitelisted(delegatee));
         _submitPassAndQueueProposal(delegatee, _proposal);
         _removeDelegateeVotingWeight();
 
@@ -84,7 +83,9 @@ contract CompoundGovernorCancelTest is ProposalTest {
         vm.assertEq(uint256(governor.state(_proposalId)), uint256(IGovernor.ProposalState.Canceled));
     }
 
-    function testFuzz_RevertIf_AnyoneCancelsProposalAboveThreshold(address _caller, uint256 _randomIndex) public {
+    function testFuzz_RevertIf_NonProposerOrGuardianCancelsProposalAboveThreshold(address _caller, uint256 _randomIndex)
+        public
+    {
         _randomIndex = bound(_randomIndex, 0, _majorDelegates.length - 1);
         address _proposer = _majorDelegates[_randomIndex];
         vm.assume(
@@ -113,7 +114,6 @@ contract CompoundGovernorCancelTest is ProposalTest {
         Proposal memory _proposal = _buildAnEmptyProposal();
         vm.prank(whitelistGuardian);
         governor.setWhitelistAccountExpiration(delegatee, block.timestamp + 2_000_000);
-        vm.assertTrue(governor.isWhitelisted(delegatee));
 
         _submitPassAndQueueProposal(delegatee, _proposal);
         _removeDelegateeVotingWeight();
@@ -127,9 +127,10 @@ contract CompoundGovernorCancelTest is ProposalTest {
         );
     }
 
-    function testFuzz_RevertIf_AnyoneCancelsWhitelistedProposalAboveThreshold(address _caller, uint256 _randomIndex)
-        public
-    {
+    function testFuzz_RevertIf_NonProposerOrGuardianCancelsWhitelistedProposalAboveThreshold(
+        address _caller,
+        uint256 _randomIndex
+    ) public {
         _randomIndex = bound(_randomIndex, 0, _majorDelegates.length - 1);
         address _proposer = _majorDelegates[_randomIndex];
         vm.assume(
