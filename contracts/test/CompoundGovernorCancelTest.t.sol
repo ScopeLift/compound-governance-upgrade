@@ -98,10 +98,7 @@ contract CompoundGovernorCancelTest is ProposalTest {
     {
         _randomIndex = bound(_randomIndex, 0, _majorDelegates.length - 1);
         address _proposer = _majorDelegates[_randomIndex];
-        vm.assume(
-            _caller != proposalGuardian.account && _caller != _proposer && _caller != COMPOUND_COMPTROLLER
-                && _caller != PROXY_ADMIN_ADDRESS
-        );
+        vm.assume(_caller != proposalGuardian.account && _caller != _proposer && _caller != PROXY_ADMIN_ADDRESS);
         Proposal memory _proposal = _buildAnEmptyProposal();
         _submitPassAndQueueProposal(_proposer, _proposal);
 
@@ -116,16 +113,19 @@ contract CompoundGovernorCancelTest is ProposalTest {
         );
     }
 
-    function testFuzz_RevertIfNonWhitelistGuardianCancelsWhitelistedProposalBelowThreshold(
+    function testFuzz_RevertIf_NonWhitelistGuardianCancelsWhitelistedProposalBelowThreshold(
         address _caller,
         uint256 _randomIndex
     ) public {
-        vm.assume(_caller != whitelistGuardian && _caller != proposalGuardian.account && _caller != PROXY_ADMIN_ADDRESS);
         _randomIndex = bound(_randomIndex, 0, _majorDelegates.length - 1);
         address _proposer = _majorDelegates[_randomIndex];
+        vm.assume(
+            _caller != whitelistGuardian && _caller != _proposer && _caller != proposalGuardian.account
+                && _caller != PROXY_ADMIN_ADDRESS
+        );
+
         Proposal memory _proposal = _buildAnEmptyProposal();
         _setWhitelistedProposer(_proposer);
-
         _submitPassAndQueueProposal(_proposer, _proposal);
         _removeDelegateeVotingWeight(_proposer);
 
