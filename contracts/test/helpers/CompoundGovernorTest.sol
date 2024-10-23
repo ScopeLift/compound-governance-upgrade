@@ -13,7 +13,7 @@ contract CompoundGovernorTest is Test, CompoundGovernorConstants {
     IComp token;
     ICompoundTimelock timelock;
     address owner;
-    address proxyAdmin;
+    address proxyAdminOwner;
     address whitelistGuardian;
     CompoundGovernor.ProposalGuardian proposalGuardian;
     uint96 constant PROPOSAL_GUARDIAN_EXPIRY = 1_739_768_400;
@@ -21,7 +21,7 @@ contract CompoundGovernorTest is Test, CompoundGovernorConstants {
     function setUp() public virtual {
         // set the owner of the governor (use the anvil default account #0, if no environment variable is set)
         owner = vm.envOr("DEPLOYER_ADDRESS", 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266);
-        proxyAdmin = makeAddr("PROXY_ADMIN_ADDRESS");
+        proxyAdminOwner = TIMELOCK_ADDRESS;
         whitelistGuardian = makeAddr("WHITELIST_GUARDIAN_ADDRESS");
         proposalGuardian = CompoundGovernor.ProposalGuardian(COMMUNITY_MULTISIG_ADDRESS, PROPOSAL_GUARDIAN_EXPIRY);
         // set the RPC URL and the fork block number to create a local execution fork for testing
@@ -30,10 +30,10 @@ contract CompoundGovernorTest is Test, CompoundGovernorConstants {
         // Deploy the CompoundGovernor contract
         DeployCompoundGovernor _deployer = new DeployCompoundGovernor();
         _deployer.setUp();
-        governor = _deployer.run(owner, proxyAdmin, whitelistGuardian, proposalGuardian);
+        governor = _deployer.run(owner, proxyAdminOwner, whitelistGuardian, proposalGuardian);
         token = governor.token();
         timelock = ICompoundTimelock(payable(governor.timelock()));
-        governor = _deployer.run(owner, proxyAdmin, whitelistGuardian, proposalGuardian);
+        governor = _deployer.run(owner, proxyAdminOwner, whitelistGuardian, proposalGuardian);
     }
 
     function _updateTimelockAdminToNewGovernor(CompoundGovernor _newGovernor) internal {
