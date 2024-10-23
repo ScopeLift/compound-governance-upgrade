@@ -20,6 +20,29 @@ import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/Own
 import {IComp} from "contracts/interfaces/IComp.sol";
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 
+/// @notice The address and expiration of the proposal guardian.
+struct ProposalGuardian {
+    // Address of the `ProposalGuardian`
+    address account;
+    // Timestamp at which the guardian loses the ability to cancel proposals
+    uint96 expiration;
+}
+
+/// @notice Structure for initializing the governor.
+struct CompoundGovernorInitializer {
+    uint48 initialVotingDelay;
+    uint32 initialVotingPeriod;
+    uint256 initialProposalThreshold;
+    IComp compAddress;
+    uint256 quorumVotes;
+    ICompoundTimelock timelockAddress;
+    uint48 initialVoteExtension;
+    address initialOwner;
+    address whitelistGuardian;
+    ProposalGuardian proposalGuardian;
+    uint256 startingProposalId;
+}
+
 /// @title CompoundGovernor
 /// @author [ScopeLift](https://scopelift.co)
 /// @notice A governance contract for the Compound DAO.
@@ -62,14 +85,6 @@ contract CompoundGovernor is
     /// @param caller The address that attempted the unauthorized action.
     error Unauthorized(bytes32 reason, address caller);
 
-    /// @notice The address and expiration of the proposal guardian.
-    struct ProposalGuardian {
-        // Address of the `ProposalGuardian`
-        address account;
-        // Timestamp at which the guardian loses the ability to cancel proposals
-        uint96 expiration;
-    }
-
     /// @notice Address which manages whitelisted proposals and whitelist accounts.
     /// @dev This address has the ability to set account whitelist expirations and can be changed through the governance
     /// process.
@@ -88,40 +103,20 @@ contract CompoundGovernor is
     }
 
     /// @notice Initialize Governor.
-    /// @param _initialVotingDelay The initial voting delay.
-    /// @param _initialVotingPeriod The initial voting period.
-    /// @param _initialProposalThreshold The initial proposal threshold.
-    /// @param _compAddress The address of the Comp token.
-    /// @param _quorumVotes The quorum votes.
-    /// @param _timelockAddress The address of the Timelock.
-    /// @param _initialVoteExtension The initial vote extension.
-    /// @param _initialOwner The initial owner of the Governor.
-    function initialize(
-        uint48 _initialVotingDelay,
-        uint32 _initialVotingPeriod,
-        uint256 _initialProposalThreshold,
-        IComp _compAddress,
-        uint256 _quorumVotes,
-        ICompoundTimelock _timelockAddress,
-        uint48 _initialVoteExtension,
-        address _initialOwner,
-        address _whitelistGuardian,
-        ProposalGuardian calldata _proposalGuardian
-    )
-        // uint256 _startingProposalId
-        public
-        initializer
-    {
+    /// @param _initializer The initialization structure.
+    function initialize(CompoundGovernorInitializer memory _initializer) public initializer {
         __Governor_init("Compound Governor");
-        __GovernorSettings_init(_initialVotingDelay, _initialVotingPeriod, _initialProposalThreshold);
-        __GovernorVotesComp_init(_compAddress);
-        __GovernorStorageEnumIds_init(340); // this was _startingProposalId.. commented out to avoid stack-to-deep error
-        __GovernorTimelockCompound_init(_timelockAddress);
-        __GovernorPreventLateQuorum_init(_initialVoteExtension);
-        __GovernorSettableFixedQuorum_init(_quorumVotes);
-        __Ownable_init(_initialOwner);
-        _setWhitelistGuardian(_whitelistGuardian);
-        _setProposalGuardian(_proposalGuardian);
+        __GovernorSettings_init(
+            _initializer.initialVotingDelay, _initializer.initialVotingPeriod, _initializer.initialProposalThreshold
+        );
+        __GovernorVotesComp_init(_initializer.compAddress);
+        __GovernorStorageEnumIds_init(_initializer.startingProposalId);
+        __GovernorTimelockCompound_init(_initializer.timelockAddress);
+        __GovernorPreventLateQuorum_init(_initializer.initialVoteExtension);
+        __GovernorSettableFixedQuorum_init(_initializer.quorumVotes);
+        __Ownable_init(_initializer.initialOwner);
+        _setWhitelistGuardian(_initializer.whitelistGuardian);
+        _setProposalGuardian(_initializer.proposalGuardian);
     }
 
     /// @notice Cancels an active proposal.

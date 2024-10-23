@@ -7,7 +7,7 @@ import {Script} from "forge-std/Script.sol";
 import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 import {IComp} from "contracts/interfaces/IComp.sol";
 import {ICompoundTimelock} from "@openzeppelin/contracts/vendor/compound/ICompoundTimelock.sol";
-import {CompoundGovernor} from "contracts/CompoundGovernor.sol";
+import {CompoundGovernorInitializer, ProposalGuardian, CompoundGovernor} from "contracts/CompoundGovernor.sol";
 import {CompoundGovernorConstants} from "script/CompoundGovernorConstants.sol";
 import {GovernorBravoDelegateStorageV1} from "contracts/GovernorBravoInterfaces.sol";
 
@@ -24,35 +24,35 @@ contract DeployCompoundGovernor is Script, CompoundGovernorConstants {
         );
     }
 
-    function run(address _owner, address _whitelistGuardian, CompoundGovernor.ProposalGuardian memory _proposalGuardian)
+    function run(address _owner, address _whitelistGuardian, ProposalGuardian memory _proposalGuardian)
         public
         returns (CompoundGovernor _governor)
     {
-        // GovernorBravoDelegateStorageV1 _governorBravoStorage =
-        //     GovernorBravoDelegateStorageV1(GOVERNOR_BRAVO_DELEGATE_ADDRESS);
-        // uint256 _startingProposalId = _governorBravoStorage.proposalCount();
+        GovernorBravoDelegateStorageV1 _governorBravoStorage =
+            GovernorBravoDelegateStorageV1(GOVERNOR_BRAVO_DELEGATE_ADDRESS);
+        uint256 _startingProposalId = _governorBravoStorage.proposalCount();
 
         vm.startBroadcast(deployerPrivateKey);
 
         // Deploy Governor implementation contract
         CompoundGovernor _implementation = new CompoundGovernor();
 
-        bytes memory _initData = abi.encodeCall(
-            CompoundGovernor.initialize,
-            (
-                INITIAL_VOTING_DELAY,
-                INITIAL_VOTING_PERIOD,
-                INITIAL_PROPOSAL_THRESHOLD,
-                IComp(COMP_TOKEN_ADDRESS),
-                INITIAL_QUORUM,
-                ICompoundTimelock(TIMELOCK_ADDRESS),
-                INITIAL_VOTE_EXTENSION,
-                _owner,
-                _whitelistGuardian,
-                _proposalGuardian
-            )
-        );
-        // _startingProposalId // commented out to avoid stack-to-deep error
+        // Initialize the proxy with the implementation contract and constructor arguments
+        CompoundGovernorInitializer memory _initializer = CompoundGovernorInitializer({
+            initialVotingDelay: INITIAL_VOTING_DELAY,
+            initialVotingPeriod: INITIAL_VOTING_PERIOD,
+            initialProposalThreshold: INITIAL_PROPOSAL_THRESHOLD,
+            compAddress: IComp(COMP_TOKEN_ADDRESS),
+            quorumVotes: INITIAL_QUORUM,
+            timelockAddress: ICompoundTimelock(TIMELOCK_ADDRESS),
+            initialVoteExtension: INITIAL_VOTE_EXTENSION,
+            initialOwner: _owner,
+            whitelistGuardian: _whitelistGuardian,
+            proposalGuardian: _proposalGuardian,
+            startingProposalId: _startingProposalId
+        });
+
+        bytes memory _initData = abi.encodeCall(CompoundGovernor.initialize, (_initializer));
 
         TransparentUpgradeableProxy _proxy =
             new TransparentUpgradeableProxy(address(_implementation), TIMELOCK_ADDRESS, _initData);
