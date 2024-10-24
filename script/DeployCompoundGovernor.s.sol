@@ -7,7 +7,7 @@ import {Script} from "forge-std/Script.sol";
 import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 import {IComp} from "contracts/interfaces/IComp.sol";
 import {ICompoundTimelock} from "@openzeppelin/contracts/vendor/compound/ICompoundTimelock.sol";
-import {CompoundGovernorInitializer, ProposalGuardian, CompoundGovernor} from "contracts/CompoundGovernor.sol";
+import {CompoundGovernor} from "contracts/CompoundGovernor.sol";
 import {CompoundGovernorConstants} from "script/CompoundGovernorConstants.sol";
 import {GovernorBravoDelegateStorageV1} from "contracts/GovernorBravoInterfaces.sol";
 
@@ -24,7 +24,7 @@ contract DeployCompoundGovernor is Script, CompoundGovernorConstants {
         );
     }
 
-    function run(address _owner, address _whitelistGuardian, ProposalGuardian memory _proposalGuardian)
+    function run(address _owner, address _whitelistGuardian, CompoundGovernor.ProposalGuardian memory _proposalGuardian)
         public
         returns (CompoundGovernor _governor)
     {
@@ -38,7 +38,7 @@ contract DeployCompoundGovernor is Script, CompoundGovernorConstants {
         CompoundGovernor _implementation = new CompoundGovernor();
 
         // Initialize the proxy with the implementation contract and constructor arguments
-        CompoundGovernorInitializer memory _initializer = CompoundGovernorInitializer({
+        CompoundGovernor.CompoundGovernorInitializer memory _initializer = CompoundGovernor.CompoundGovernorInitializer({
             initialVotingDelay: INITIAL_VOTING_DELAY,
             initialVotingPeriod: INITIAL_VOTING_PERIOD,
             initialProposalThreshold: INITIAL_PROPOSAL_THRESHOLD,

@@ -5,7 +5,7 @@ import {Test, console2} from "forge-std/Test.sol";
 import {ICompoundTimelock} from "@openzeppelin/contracts/vendor/compound/ICompoundTimelock.sol";
 import {CompoundGovernorConstants} from "script/CompoundGovernorConstants.sol";
 import {DeployCompoundGovernor} from "script/DeployCompoundGovernor.s.sol";
-import {ProposalGuardian, CompoundGovernor} from "contracts/CompoundGovernor.sol";
+import {CompoundGovernor} from "contracts/CompoundGovernor.sol";
 import {IComp} from "contracts/interfaces/IComp.sol";
 
 contract CompoundGovernorTest is Test, CompoundGovernorConstants {
@@ -14,14 +14,14 @@ contract CompoundGovernorTest is Test, CompoundGovernorConstants {
     ICompoundTimelock timelock;
     address owner;
     address whitelistGuardian;
-    ProposalGuardian proposalGuardian;
+    CompoundGovernor.ProposalGuardian proposalGuardian;
     uint96 constant PROPOSAL_GUARDIAN_EXPIRY = 1_739_768_400;
 
     function setUp() public virtual {
         // set the owner of the governor (use the anvil default account #0, if no environment variable is set)
         owner = vm.envOr("DEPLOYER_ADDRESS", 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266);
         whitelistGuardian = makeAddr("WHITELIST_GUARDIAN_ADDRESS");
-        proposalGuardian = ProposalGuardian(COMMUNITY_MULTISIG_ADDRESS, PROPOSAL_GUARDIAN_EXPIRY);
+        proposalGuardian = CompoundGovernor.ProposalGuardian(COMMUNITY_MULTISIG_ADDRESS, PROPOSAL_GUARDIAN_EXPIRY);
         // set the RPC URL and the fork block number to create a local execution fork for testing
         vm.createSelectFork(vm.envOr("RPC_URL", string("Please set RPC_URL in your .env file")), FORK_BLOCK);
 

@@ -3,10 +3,10 @@ pragma solidity 0.8.26;
 
 import {ProposalTest} from "contracts/test/helpers/ProposalTest.sol";
 import {IGovernor} from "@openzeppelin/contracts/governance/IGovernor.sol";
-import {ProposalGuardian, CompoundGovernor} from "contracts/CompoundGovernor.sol";
+import {CompoundGovernor} from "contracts/CompoundGovernor.sol";
 
 contract CompoundGovernorSetProposalGuardianTest is ProposalTest {
-    function _buildSetProposalGuardianProposal(ProposalGuardian memory _proposalGuardian)
+    function _buildSetProposalGuardianProposal(CompoundGovernor.ProposalGuardian memory _proposalGuardian)
         private
         view
         returns (Proposal memory _proposal)
@@ -23,7 +23,9 @@ contract CompoundGovernorSetProposalGuardianTest is ProposalTest {
         _proposal = Proposal(_targets, _values, _calldatas, "Set New proposalGuardian");
     }
 
-    function testFuzz_SetsProposalGuardianAsTimelock(ProposalGuardian memory _proposalGuardian) public {
+    function testFuzz_SetsProposalGuardianAsTimelock(CompoundGovernor.ProposalGuardian memory _proposalGuardian)
+        public
+    {
         Proposal memory _proposal = _buildSetProposalGuardianProposal(_proposalGuardian);
         _submitPassQueueAndExecuteProposal(delegatee, _proposal);
         (address _account, uint96 _expiration) = governor.proposalGuardian();
@@ -32,7 +34,7 @@ contract CompoundGovernorSetProposalGuardianTest is ProposalTest {
     }
 
     function testFuzz_EmitsEventWhenAProposalGuardianIsSetByTheTimelock(
-        ProposalGuardian memory _proposalGuardian,
+        CompoundGovernor.ProposalGuardian memory _proposalGuardian,
         address _caller
     ) public {
         vm.assume(_caller != PROXY_ADMIN_ADDRESS);
@@ -51,7 +53,10 @@ contract CompoundGovernorSetProposalGuardianTest is ProposalTest {
         );
     }
 
-    function testFuzz_RevertIf_CallerIsNotTimelock(ProposalGuardian memory _proposalGuardian, address _caller) public {
+    function testFuzz_RevertIf_CallerIsNotTimelock(
+        CompoundGovernor.ProposalGuardian memory _proposalGuardian,
+        address _caller
+    ) public {
         vm.assume(_caller != TIMELOCK_ADDRESS && _caller != PROXY_ADMIN_ADDRESS);
         vm.expectRevert(abi.encodeWithSelector(IGovernor.GovernorOnlyExecutor.selector, _caller));
         vm.prank(_caller);

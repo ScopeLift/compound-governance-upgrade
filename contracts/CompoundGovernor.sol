@@ -20,29 +20,6 @@ import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/Own
 import {IComp} from "contracts/interfaces/IComp.sol";
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 
-/// @notice The address and expiration of the proposal guardian.
-struct ProposalGuardian {
-    // Address of the `ProposalGuardian`
-    address account;
-    // Timestamp at which the guardian loses the ability to cancel proposals
-    uint96 expiration;
-}
-
-/// @notice Structure for initializing the governor.
-struct CompoundGovernorInitializer {
-    uint48 initialVotingDelay;
-    uint32 initialVotingPeriod;
-    uint256 initialProposalThreshold;
-    IComp compAddress;
-    uint256 quorumVotes;
-    ICompoundTimelock timelockAddress;
-    uint48 initialVoteExtension;
-    address initialOwner;
-    address whitelistGuardian;
-    ProposalGuardian proposalGuardian;
-    uint256 startingProposalId;
-}
-
 /// @title CompoundGovernor
 /// @author [ScopeLift](https://scopelift.co)
 /// @notice A governance contract for the Compound DAO.
@@ -58,6 +35,29 @@ contract CompoundGovernor is
     GovernorSettableFixedQuorumUpgradeable,
     OwnableUpgradeable
 {
+    /// @notice The address and expiration of the proposal guardian.
+    struct ProposalGuardian {
+        // Address of the `ProposalGuardian`
+        address account;
+        // Timestamp at which the guardian loses the ability to cancel proposals
+        uint96 expiration;
+    }
+
+    /// @notice Structure for initializing the governor.
+    struct CompoundGovernorInitializer {
+        uint48 initialVotingDelay;
+        uint32 initialVotingPeriod;
+        uint256 initialProposalThreshold;
+        IComp compAddress;
+        uint256 quorumVotes;
+        ICompoundTimelock timelockAddress;
+        uint48 initialVoteExtension;
+        address initialOwner;
+        address whitelistGuardian;
+        ProposalGuardian proposalGuardian;
+        uint256 startingProposalId;
+    }
+
     /// @notice Emitted when the expiration of a whitelisted account is set or updated.
     /// @param account The address of the account being whitelisted.
     /// @param expiration The timestamp until which the account is whitelisted.
