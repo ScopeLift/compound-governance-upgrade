@@ -42,6 +42,8 @@ contract CompoundGovernorSetQuorumTest is ProposalTest {
             governor.propose(_proposal.targets, _proposal.values, _proposal.calldatas, _proposal.description);
         IGovernor.ProposalState _afterProposeState = governor.state(_proposalId);
         assertEq(uint8(_afterProposeState), uint8(IGovernor.ProposalState.Pending));
+        vm.expectEmit();
+        emit IGovernor.ProposalCanceled(_proposalId);
         vm.prank(delegatee);
         governor.cancel(_proposalId);
         IGovernor.ProposalState _afterCancelState = governor.state(_proposalId);

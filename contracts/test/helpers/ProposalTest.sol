@@ -56,10 +56,14 @@ contract ProposalTest is CompoundGovernorTest {
 
     function _passAndQueueProposal(Proposal memory _proposal, uint256 _proposalId) public {
         uint256 _timeLockDelay = timelock.delay();
+        vm.expectEmit();
+        emit IGovernor.VoteCast(delegatee, _proposalId, 1, token.getCurrentVotes(delegatee), "");
         vm.prank(delegatee);
         governor.castVote(_proposalId, uint8(GovernorCountingSimpleUpgradeable.VoteType.For));
 
         vm.roll(vm.getBlockNumber() + INITIAL_VOTING_PERIOD + 1);
+        vm.expectEmit();
+        emit IGovernor.ProposalQueued(_proposalId, block.timestamp + _timeLockDelay);
         governor.queue(
             _proposal.targets, _proposal.values, _proposal.calldatas, keccak256(bytes(_proposal.description))
         );
@@ -67,20 +71,18 @@ contract ProposalTest is CompoundGovernorTest {
         vm.warp(block.timestamp + _timeLockDelay + 1);
     }
 
-    function _passQueueAndExecuteProposal(uint256 _proposalId) public {
-        uint256 _timeLockDelay = timelock.delay();
-        vm.prank(delegatee);
-        governor.castVote(_proposalId, uint8(GovernorCountingSimpleUpgradeable.VoteType.For));
-        vm.roll(vm.getBlockNumber() + INITIAL_VOTING_PERIOD + 1);
-        governor.queue(_proposalId);
-        vm.warp(block.timestamp + _timeLockDelay + 1);
+    function _passQueueAndExecuteProposal(Proposal memory _proposal, uint256 _proposalId) public {
+        _passAndQueueProposal(_proposal, _proposalId);
+        vm.expectEmit();
+        emit IGovernor.ProposalExecuted(_proposalId);
         governor.execute(_proposalId);
     }
 
     function _failProposal(uint256 _proposalId) public {
+        vm.expectEmit();
+        emit IGovernor.VoteCast(delegatee, _proposalId, 0, token.getCurrentVotes(delegatee), "");
         vm.prank(delegatee);
         governor.castVote(_proposalId, uint8(GovernorCountingSimpleUpgradeable.VoteType.Against));
-
         vm.roll(vm.getBlockNumber() + INITIAL_VOTING_PERIOD + 1);
     }
 
@@ -91,7 +93,7 @@ contract ProposalTest is CompoundGovernorTest {
 
     function _submitPassQueueAndExecuteProposal(address _proposer, Proposal memory _proposal) public {
         uint256 _proposalId = _submitProposal(_proposer, _proposal);
-        _passQueueAndExecuteProposal(_proposalId);
+        _passQueueAndExecuteProposal(_proposal, _proposalId);
     }
 
     function _submitAndFailProposal(address _proposer, Proposal memory _proposal) public {
