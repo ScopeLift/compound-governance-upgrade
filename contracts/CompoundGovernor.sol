@@ -2,18 +2,18 @@
 pragma solidity 0.8.26;
 
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import {GovernorUpgradeable} from "@openzeppelin/contracts-upgradeable/governance/GovernorUpgradeable.sol";
+import {GovernorUpgradeable} from "contracts/extensions/GovernorUpgradeable.sol";
 import {GovernorVotesCompUpgradeable} from "contracts/extensions/GovernorVotesCompUpgradeable.sol";
 import {GovernorSettableFixedQuorumUpgradeable} from "contracts/extensions/GovernorSettableFixedQuorumUpgradeable.sol";
 import {GovernorCountingFractionalUpgradeable} from
-    "@openzeppelin/contracts-upgradeable/governance/extensions/GovernorCountingFractionalUpgradeable.sol";
+    "contracts/extensions/GovernorCountingFractionalUpgradeable.sol";
 import {GovernorTimelockCompoundUpgradeable} from
-    "@openzeppelin/contracts-upgradeable/governance/extensions/GovernorTimelockCompoundUpgradeable.sol";
+    "contracts/extensions/GovernorTimelockCompoundUpgradeable.sol";
 import {ICompoundTimelock} from "@openzeppelin/contracts/vendor/compound/ICompoundTimelock.sol";
 import {GovernorSettingsUpgradeable} from
-    "@openzeppelin/contracts-upgradeable/governance/extensions/GovernorSettingsUpgradeable.sol";
+    "contracts/extensions/GovernorSettingsUpgradeable.sol";
 import {GovernorPreventLateQuorumUpgradeable} from
-    "@openzeppelin/contracts-upgradeable/governance/extensions/GovernorPreventLateQuorumUpgradeable.sol";
+    "contracts/extensions/GovernorPreventLateQuorumUpgradeable.sol";
 import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import {IComp} from "contracts/interfaces/IComp.sol";
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
