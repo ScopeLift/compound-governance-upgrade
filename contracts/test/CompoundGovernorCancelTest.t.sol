@@ -15,9 +15,9 @@ contract CompoundGovernorCancelTest is ProposalTest {
     }
 
     function _getProposalId(Proposal memory _proposal) private view returns (uint256) {
-        return governor.hashProposal(
-            _proposal.targets, _proposal.values, _proposal.calldatas, keccak256(bytes(_proposal.description))
-        );
+        uint256 _hashedProposalId = governor.hashProposal(
+            _proposal.targets, _proposal.values, _proposal.calldatas, keccak256(bytes(_proposal.description)));
+        return governor.getEnumeratedProposalIdFromHashed(_hashedProposalId);
     }
 
     function _setWhitelistedProposer(address _proposer) private {
@@ -37,8 +37,8 @@ contract CompoundGovernorCancelTest is ProposalTest {
         _randomIndex = bound(_randomIndex, 0, _majorDelegates.length - 1);
         address _proposer = _majorDelegates[_randomIndex];
         Proposal memory _proposal = _buildAnEmptyProposal();
-        uint256 _proposalId = _getProposalId(_proposal);
         _submitPassAndQueueProposal(_proposer, _proposal);
+        uint256 _proposalId = _getProposalId(_proposal);
 
         vm.prank(_proposer);
         governor.cancel(
@@ -51,8 +51,8 @@ contract CompoundGovernorCancelTest is ProposalTest {
         _randomIndex = bound(_randomIndex, 0, _majorDelegates.length - 1);
         address _proposer = _majorDelegates[_randomIndex];
         Proposal memory _proposal = _buildAnEmptyProposal();
-        uint256 _proposalId = _getProposalId(_proposal);
         _submitPassAndQueueProposal(_proposer, _proposal);
+        uint256 _proposalId = _getProposalId(_proposal);
 
         vm.prank(proposalGuardian.account);
         governor.cancel(
@@ -66,8 +66,8 @@ contract CompoundGovernorCancelTest is ProposalTest {
         _randomIndex = bound(_randomIndex, 0, _majorDelegates.length - 1);
         address _proposer = _majorDelegates[_randomIndex];
         Proposal memory _proposal = _buildAnEmptyProposal();
-        uint256 _proposalId = _getProposalId(_proposal);
         _submitPassAndQueueProposal(_proposer, _proposal);
+        uint256 _proposalId = _getProposalId(_proposal);
         _removeDelegateeVotingWeight(_proposer);
 
         vm.prank(_caller);
@@ -81,9 +81,9 @@ contract CompoundGovernorCancelTest is ProposalTest {
         _randomIndex = bound(_randomIndex, 0, _majorDelegates.length - 1);
         address _proposer = _majorDelegates[_randomIndex];
         Proposal memory _proposal = _buildAnEmptyProposal();
-        uint256 _proposalId = _getProposalId(_proposal);
         _setWhitelistedProposer(_proposer);
         _submitPassAndQueueProposal(_proposer, _proposal);
+        uint256 _proposalId = _getProposalId(_proposal);
         _removeDelegateeVotingWeight(_proposer);
 
         vm.prank(whitelistGuardian);

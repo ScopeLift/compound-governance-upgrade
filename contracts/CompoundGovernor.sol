@@ -67,6 +67,21 @@ contract CompoundGovernor is
         uint96 expiration;
     }
 
+    /// @notice Structure for initializing the governor.
+    struct CompoundGovernorInitializer {
+        uint48 initialVotingDelay;
+        uint32 initialVotingPeriod;
+        uint256 initialProposalThreshold;
+        IComp compAddress;
+        uint256 quorumVotes;
+        ICompoundTimelock timelockAddress;
+        uint48 initialVoteExtension;
+        address initialOwner;
+        address whitelistGuardian;
+        ProposalGuardian proposalGuardian;
+        uint256 startingProposalId;
+    }
+
     /// @notice Address which manages whitelisted proposals and whitelist accounts.
     /// @dev This address has the ability to set account whitelist expirations and can be changed through the governance
     /// process.
@@ -85,35 +100,19 @@ contract CompoundGovernor is
     }
 
     /// @notice Initialize Governor.
-    /// @param _initialVotingDelay The initial voting delay.
-    /// @param _initialVotingPeriod The initial voting period.
-    /// @param _initialProposalThreshold The initial proposal threshold.
-    /// @param _compAddress The address of the Comp token.
-    /// @param _quorumVotes The quorum votes.
-    /// @param _timelockAddress The address of the Timelock.
-    /// @param _initialVoteExtension The initial vote extension.
-    /// @param _initialOwner The initial owner of the Governor.
-    function initialize(
-        uint48 _initialVotingDelay,
-        uint32 _initialVotingPeriod,
-        uint256 _initialProposalThreshold,
-        IComp _compAddress,
-        uint256 _quorumVotes,
-        ICompoundTimelock _timelockAddress,
-        uint48 _initialVoteExtension,
-        address _initialOwner,
-        address _whitelistGuardian,
-        ProposalGuardian calldata _proposalGuardian
-    ) public initializer {
-        __Governor_init("Compound Governor");
-        __GovernorSettings_init(_initialVotingDelay, _initialVotingPeriod, _initialProposalThreshold);
-        __GovernorVotesComp_init(_compAddress);
-        __GovernorTimelockCompound_init(_timelockAddress);
-        __GovernorPreventLateQuorum_init(_initialVoteExtension);
-        __GovernorSettableFixedQuorum_init(_quorumVotes);
-        __Ownable_init(_initialOwner);
-        _setWhitelistGuardian(_whitelistGuardian);
-        _setProposalGuardian(_proposalGuardian);
+    /// @param _initializer The initialization structure.
+    function initialize(CompoundGovernorInitializer memory _initializer) public initializer {
+        __Governor_init("Compound Governor", _initializer.startingProposalId);
+        __GovernorSettings_init(
+            _initializer.initialVotingDelay, _initializer.initialVotingPeriod, _initializer.initialProposalThreshold
+        );
+        __GovernorVotesComp_init(_initializer.compAddress);
+        __GovernorTimelockCompound_init(_initializer.timelockAddress);
+        __GovernorPreventLateQuorum_init(_initializer.initialVoteExtension);
+        __GovernorSettableFixedQuorum_init(_initializer.quorumVotes);
+        __Ownable_init(_initializer.initialOwner);
+        _setWhitelistGuardian(_initializer.whitelistGuardian);
+        _setProposalGuardian(_initializer.proposalGuardian);
     }
 
     /// @notice Cancels an active proposal.
@@ -131,7 +130,8 @@ contract CompoundGovernor is
         bytes[] memory calldatas,
         bytes32 descriptionHash
     ) public override returns (uint256) {
-        uint256 _proposalId = hashProposal(targets, values, calldatas, descriptionHash);
+        uint256 _hashedProposalId = hashProposal(targets, values, calldatas, descriptionHash);
+        uint256 _proposalId = getEnumeratedProposalIdFromHashed(_hashedProposalId);
         address _proposer = proposalProposer(_proposalId);
 
         if (msg.sender != _proposer && msg.sender != proposalGuardian.account) {

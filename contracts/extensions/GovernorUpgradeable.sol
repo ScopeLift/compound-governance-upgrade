@@ -46,12 +46,24 @@ abstract contract GovernorUpgradeable is Initializable, ContextUpgradeable, ERC1
         uint48 etaSeconds;
     }
 
+    /// @dev Storage structure to store proposal details.
+    struct ProposalDetails {
+        address[] targets;
+        uint256[] values;
+        bytes[] calldatas;
+        bytes32 descriptionHash;
+    }
     bytes32 private constant ALL_PROPOSAL_STATES_BITMAP = bytes32((2 ** (uint8(type(ProposalState).max) + 1)) - 1);
     /// @custom:storage-location erc7201:openzeppelin.storage.Governor
     struct GovernorStorage {
         string _name;
 
         mapping(uint256 proposalId => ProposalCore) _proposals;
+
+        uint256 _nextProposalId;
+        uint256[] _proposalIds;
+        mapping(uint256 proposalId => ProposalDetails) _proposalDetails;
+        mapping(uint256 hashedProposalId => uint256) _hashedproposalIdToEnumeratedId;
 
         // This queue keeps track of the governor operating on itself. Calls to functions protected by the {onlyGovernance}
         // modifier needs to be whitelisted in this queue. Whitelisting is set in {execute}, consumed by the
@@ -87,14 +99,15 @@ abstract contract GovernorUpgradeable is Initializable, ContextUpgradeable, ERC1
     /**
      * @dev Sets the value for {name} and {version}
      */
-    function __Governor_init(string memory name_) internal onlyInitializing {
-        __EIP712_init_unchained(name_, version());
-        __Governor_init_unchained(name_);
+    function __Governor_init(string memory _name, uint256 _startingProposalId) internal onlyInitializing {
+        __EIP712_init_unchained(_name, version());
+        __Governor_init_unchained(_name, _startingProposalId);
     }
 
-    function __Governor_init_unchained(string memory name_) internal onlyInitializing {
+    function __Governor_init_unchained(string memory _name, uint256 _startingProposalId) internal onlyInitializing {
         GovernorStorage storage $ = _getGovernorStorage();
-        $._name = name_;
+        $._name = _name;
+        $._nextProposalId = _startingProposalId;
     }
 
     /**
@@ -338,7 +351,7 @@ abstract contract GovernorUpgradeable is Initializable, ContextUpgradeable, ERC1
         address proposer
     ) internal virtual returns (uint256 proposalId) {
         GovernorStorage storage $ = _getGovernorStorage();
-        proposalId = hashProposal(targets, values, calldatas, keccak256(bytes(description)));
+        proposalId = $._nextProposalId;
 
         if (targets.length != values.length || targets.length != calldatas.length || targets.length == 0) {
             revert GovernorInvalidProposalLength(targets.length, calldatas.length, values.length);
@@ -367,7 +380,14 @@ abstract contract GovernorUpgradeable is Initializable, ContextUpgradeable, ERC1
             description
         );
 
-        // Using a named return variable to avoid stack too deep errors
+        $._proposalDetails[proposalId] = ProposalDetails({
+            targets: targets,
+            values: values,
+            calldatas: calldatas,
+            descriptionHash: keccak256(bytes(description))
+        });
+        $._hashedproposalIdToEnumeratedId[hashProposal(targets, values, calldatas, keccak256(bytes(description)))] = proposalId;
+        $._nextProposalId += 1;
     }
 
     /**
@@ -380,7 +400,8 @@ abstract contract GovernorUpgradeable is Initializable, ContextUpgradeable, ERC1
         bytes32 descriptionHash
     ) public virtual returns (uint256) {
         GovernorStorage storage $ = _getGovernorStorage();
-        uint256 proposalId = hashProposal(targets, values, calldatas, descriptionHash);
+        uint256 hashedProposalId = hashProposal(targets, values, calldatas, descriptionHash);
+        uint256 proposalId = $._hashedproposalIdToEnumeratedId[hashedProposalId];
 
         _validateStateBitmap(proposalId, _encodeStateBitmap(ProposalState.Succeeded));
 
@@ -429,7 +450,8 @@ abstract contract GovernorUpgradeable is Initializable, ContextUpgradeable, ERC1
         bytes32 descriptionHash
     ) public payable virtual returns (uint256) {
         GovernorStorage storage $ = _getGovernorStorage();
-        uint256 proposalId = hashProposal(targets, values, calldatas, descriptionHash);
+        uint256 hashedProposalId = hashProposal(targets, values, calldatas, descriptionHash);
+        uint256 proposalId = $._hashedproposalIdToEnumeratedId[hashedProposalId];
 
         _validateStateBitmap(
             proposalId,
@@ -492,7 +514,8 @@ abstract contract GovernorUpgradeable is Initializable, ContextUpgradeable, ERC1
         // The proposalId will be recomputed in the `_cancel` call further down. However we need the value before we
         // do the internal call, because we need to check the proposal state BEFORE the internal `_cancel` call
         // changes it. The `hashProposal` duplication has a cost that is limited, and that we accept.
-        uint256 proposalId = hashProposal(targets, values, calldatas, descriptionHash);
+        uint256 hashedProposalId = hashProposal(targets, values, calldatas, descriptionHash);
+        uint256 proposalId = _getGovernorStorage()._hashedproposalIdToEnumeratedId[hashedProposalId];
 
         // public cancel restrictions (on top of existing _cancel restrictions).
         _validateStateBitmap(proposalId, _encodeStateBitmap(ProposalState.Pending));
@@ -516,7 +539,8 @@ abstract contract GovernorUpgradeable is Initializable, ContextUpgradeable, ERC1
         bytes32 descriptionHash
     ) internal virtual returns (uint256) {
         GovernorStorage storage $ = _getGovernorStorage();
-        uint256 proposalId = hashProposal(targets, values, calldatas, descriptionHash);
+        uint256 hashedProposalId = hashProposal(targets, values, calldatas, descriptionHash);
+        uint256 proposalId = $._hashedproposalIdToEnumeratedId[hashedProposalId];
 
         _validateStateBitmap(
             proposalId,
@@ -683,6 +707,84 @@ abstract contract GovernorUpgradeable is Initializable, ContextUpgradeable, ERC1
         return votedWeight;
     }
 
+    /// @notice Version of {IGovernor-queue} with only enumerated `proposalId` as an argument.
+    /// @param _proposalId The enumerated proposal ID.
+    /// @dev Uses the externally-used enumerated proposal ID to find the proposal details
+    /// needed by the GovernorUpgradeable queue function.
+    function queue(uint256 _proposalId) public virtual {
+        (address[] memory _targets, uint256[] memory _values, bytes[] memory _calldatas, bytes32 _descriptionHash) =
+            proposalDetails(_proposalId);
+        GovernorUpgradeable.queue(_targets, _values, _calldatas, _descriptionHash);
+    }
+
+    /// @notice Version of {IGovernor-execute} with only enumerated `proposalId` as an argument.
+    /// @param _proposalId The enumerated proposal ID.
+    /// @dev Uses the externally-used enumerated proposal ID to find the proposal details
+    /// needed by the GovernorUpgradeable execute function.
+    function execute(uint256 _proposalId) public payable virtual {
+        (address[] memory _targets, uint256[] memory _values, bytes[] memory _calldatas, bytes32 _descriptionHash) =
+            proposalDetails(_proposalId);
+        GovernorUpgradeable.execute(_targets, _values, _calldatas, _descriptionHash);
+    }
+
+    /// @notice Version of {IGovernor-cancel} with only enumerated `proposalId` as an argument.
+    /// @param _proposalId The enumerated proposal ID.
+    /// @dev Uses the externally-used enumerated proposal ID to find the proposal details
+    /// needed by the GovernorUpgradeable cancel function.
+    function cancel(uint256 _proposalId) public virtual {
+        (address[] memory _targets, uint256[] memory _values, bytes[] memory _calldatas, bytes32 _descriptionHash) =
+            proposalDetails(_proposalId);
+        GovernorUpgradeable.cancel(_targets, _values, _calldatas, _descriptionHash);
+    }
+
+    /// @notice Returns the number of stored proposals.
+    /// @return The number of stored proposals.
+    function proposalCount() public view virtual returns (uint256) {
+        GovernorStorage storage $ = _getGovernorStorage();
+        return $._proposalIds.length;
+    }
+
+    /// @notice Returns the details of a proposalId. Reverts if `proposalId` is not a known proposal.
+    /// @param _proposalId The enumerated proposal ID.
+    function proposalDetails(uint256 _proposalId)
+        public
+        view
+        virtual
+        returns (address[] memory, uint256[] memory, bytes[] memory, bytes32)
+    {
+        GovernorStorage storage $ = _getGovernorStorage();
+        ProposalDetails memory _details = $._proposalDetails[_proposalId];
+        if (_details.descriptionHash == 0) {
+            revert GovernorNonexistentProposal(_proposalId);
+        }
+        return (_details.targets, _details.values, _details.calldatas, _details.descriptionHash);
+    }
+
+    /// @notice Returns the details (including the proposalId) of a proposal given its sequential index.
+    /// @param _index The index of the proposal.
+    function proposalDetailsAt(uint256 _index)
+        public
+        view
+        virtual
+        returns (
+            uint256 _proposalId,
+            address[] memory _targets,
+            uint256[] memory _values,
+            bytes[] memory _calldatas,
+            bytes32 _descriptionHash
+        )
+    {
+        GovernorStorage storage $ = _getGovernorStorage();
+        _proposalId = $._proposalIds[_index];
+        (_targets, _values, _calldatas, _descriptionHash) = proposalDetails(_proposalId);
+    }
+
+    /// @notice Returns the enuemerated proposal ID for a given hashed Proposal ID.
+    /// @param _hashedProposalId The hashed proposal ID.
+    function getEnumeratedProposalIdFromHashed(uint256 _hashedProposalId) public view virtual returns (uint256) {
+        return _getGovernorStorage()._hashedproposalIdToEnumeratedId[_hashedProposalId];
+    }
+    
     /**
      * @dev Relays a transaction or function call to an arbitrary target. In cases where the governance executor
      * is some contract other than the governor itself, like when using a timelock, this function can be invoked
