@@ -760,25 +760,6 @@ abstract contract GovernorUpgradeable is Initializable, ContextUpgradeable, ERC1
         return (_details.targets, _details.values, _details.calldatas, _details.descriptionHash);
     }
 
-    /// @notice Returns the details (including the proposalId) of a proposal given its sequential index.
-    /// @param _index The index of the proposal.
-    function proposalDetailsAt(uint256 _index)
-        public
-        view
-        virtual
-        returns (
-            uint256 _proposalId,
-            address[] memory _targets,
-            uint256[] memory _values,
-            bytes[] memory _calldatas,
-            bytes32 _descriptionHash
-        )
-    {
-        GovernorStorage storage $ = _getGovernorStorage();
-        _proposalId = $._proposalIds[_index];
-        (_targets, _values, _calldatas, _descriptionHash) = proposalDetails(_proposalId);
-    }
-
     /// @notice Returns the enuemerated proposal ID for a given hashed Proposal ID.
     /// @param _hashedProposalId The hashed proposal ID.
     function getEnumeratedProposalIdFromHashed(uint256 _hashedProposalId) public view virtual returns (uint256) {
