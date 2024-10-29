@@ -61,7 +61,7 @@ abstract contract GovernorUpgradeable is Initializable, ContextUpgradeable, ERC1
         mapping(uint256 proposalId => ProposalCore) _proposals;
 
         uint256 _nextProposalId;
-        uint256[] _proposalIds;
+        uint256 _proposalCount;
         mapping(uint256 proposalId => ProposalDetails) _proposalDetails;
         mapping(uint256 hashedProposalId => uint256) _hashedproposalIdToEnumeratedId;
 
@@ -386,6 +386,7 @@ abstract contract GovernorUpgradeable is Initializable, ContextUpgradeable, ERC1
             calldatas: calldatas,
             descriptionHash: keccak256(bytes(description))
         });
+        $._proposalCount += 1;
         $._hashedproposalIdToEnumeratedId[hashProposal(targets, values, calldatas, keccak256(bytes(description)))] = proposalId;
         $._nextProposalId += 1;
     }
@@ -741,7 +742,7 @@ abstract contract GovernorUpgradeable is Initializable, ContextUpgradeable, ERC1
     /// @return The number of stored proposals.
     function proposalCount() public view virtual returns (uint256) {
         GovernorStorage storage $ = _getGovernorStorage();
-        return $._proposalIds.length;
+        return $._proposalCount;
     }
 
     /// @notice Returns the details of a proposalId. Reverts if `proposalId` is not a known proposal.

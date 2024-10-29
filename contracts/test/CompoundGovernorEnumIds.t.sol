@@ -69,6 +69,7 @@ contract CompoundGovernorEnumIdsTest is ProposalTest {
         string memory _description = "Checking for enumearted proposal IDs on events";
         Proposal memory _firstProposal = _buildBasicProposal(_newValue, "First proposal to get and ID");
         uint256 _firstProposalId = _submitProposal(delegatee, _firstProposal);
+        uint256 _originalProposalCount = governor.proposalCount();
         Proposal memory _proposal = _buildBasicProposal(_newValue, _description);
         vm.expectEmit(true, true, true, true);
         emit IGovernor.ProposalCreated(
@@ -84,5 +85,6 @@ contract CompoundGovernorEnumIdsTest is ProposalTest {
         );
         uint256 _proposalId = _submitProposal(delegatee, _proposal);
         assertEq(_proposalId, _firstProposalId + 1);
+        assertEq(governor.proposalCount(), _originalProposalCount + 1);
     }
 }
