@@ -17,29 +17,9 @@ import {ProposalTest} from "contracts/test/helpers/ProposalTest.sol";
 address constant DEPLOYED_COMPOUND_GOVERNOR = 0x1111111111111111111111111111111111111111;
 
 abstract contract BravoToCompoundGovernorUpgradeTest is ProposalTest {
-    // IComp token = IComp(COMP_TOKEN_ADDRESS);
-    // ICompoundTimelock timelock = ICompoundTimelock(TIMELOCK_ADDRESS);
-    // CompoundGovernor governor;
-    // address owner;
-    // address whitelistGuardian;
-    // CompoundGovernor.ProposalGuardian proposalGuardian;
-    // uint96 constant PROPOSAL_GUARDIAN_EXPIRY = 1_739_768_400;
-
     // GovernorBravo to receive upgrade proposal
     address constant GOVERNOR_BRAVO_DELEGATE_ADDRESS = 0xc0Da02939E1441F497fd74F78cE7Decb17B66529;
     GovernorBravoDelegate public constant GOVERNOR_BRAVO = GovernorBravoDelegate(GOVERNOR_BRAVO_DELEGATE_ADDRESS);
-
-    // function _doCompoundGovernorDeploy(
-    //     address _whitelistGuardian,
-    //     CompoundGovernor.ProposalGuardian memory _proposalGuardian
-    // ) internal returns (CompoundGovernor _governor) {
-    //     // set the owner of the governor (use the anvil default account #0, if no environment variable is set)
-    //     owner = vm.envOr("DEPLOYER_ADDRESS", 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266);
-    //     // Deploy the CompoundGovernor contract
-    //     DeployCompoundGovernor _deployer = new DeployCompoundGovernor();
-    //     _deployer.setUp();
-    //     _governor = _deployer.run(owner, _whitelistGuardian, _proposalGuardian);
-    // }
 
     function _getBravoProposalStartBlock(uint256 _bravoProposalId) internal view returns (uint256) {
         (,,, uint256 _startBlock,,,,,,) = GOVERNOR_BRAVO.proposals(_bravoProposalId);
