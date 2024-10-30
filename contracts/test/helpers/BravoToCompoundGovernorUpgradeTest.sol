@@ -136,6 +136,39 @@ abstract contract BravoToCompoundGovernorUpgradeTest is ProposalTest {
 
     function _useDeployedCompoundGovernor() internal virtual returns (bool);
 
+ 
+    function _buildNewGovernorSetVotingDelayProposal(uint48 _amount) private view returns (Proposal memory _proposal) {
+        address[] memory _targets = new address[](1);
+        _targets[0] = address(governor);
+
+        uint256[] memory _values = new uint256[](1);
+        _values[0] = 0;
+
+        bytes[] memory _calldatas = new bytes[](1);
+        _calldatas[0] = _buildProposalData("setVotingDelay(uint48)", abi.encode(_amount));
+
+        _proposal = Proposal(_targets, _values, _calldatas, "Set New Voting Delay on New Compound Governor");
+    }
+
+    function _buildAndSubmitOldGovernorSetVotingDelayProposal(uint256 _proposerIndex, uint _amount) internal returns (uint256 _proposalId) {
+        vm.assume(_amount >= GOVERNOR_BRAVO.MIN_VOTING_DELAY() && _amount <= GOVERNOR_BRAVO.MAX_VOTING_DELAY());
+        _proposerIndex = bound(_proposerIndex, 0, _majorDelegates.length - 1);
+        address[] memory _targets = new address[](1);
+        uint256[] memory _values = new uint256[](1);
+        string[] memory _signatures = new string[](1);
+        bytes[] memory _calldatas = new bytes[](1);
+
+        _targets[0] = GOVERNOR_BRAVO_DELEGATE_ADDRESS;
+        _values[0] = 0;
+        _signatures[0] = "_setVotingDelay(uint256)";
+        _calldatas[0] = abi.encode(uint256(_amount));
+
+        vm.prank(_majorDelegates[0]);
+        return GOVERNOR_BRAVO.propose(
+            _targets, _values, _signatures, _calldatas, "Set Voting Delay on Old Governor Bravo"
+        );
+    }
+
     function test_UpgradeToCompoundGovernor() public {
         _upgradeFromBravoToCompoundGovernorViaProposalVote();
         assertEq(timelock.admin(), address(governor));
@@ -144,5 +177,38 @@ abstract contract BravoToCompoundGovernorUpgradeTest is ProposalTest {
     function test_FailUpgradeToCompoundGovernor() public {
         _failProposalVoteForUpgradeFromBravoToCompoundGovernor();
         assertEq(timelock.admin(), GOVERNOR_BRAVO_DELEGATE_ADDRESS);
+    }
+
+    function testFuzz_NewGovernorProposalCanBePassedAfterSuccessfulUpgrade(uint256 _proposerIndex, uint48 _newVotingDelay) public {
+        _proposerIndex = bound(_proposerIndex, 0, _majorDelegates.length - 1);
+        _upgradeFromBravoToCompoundGovernorViaProposalVote();
+        assertEq(timelock.admin(), address(governor));
+        Proposal memory _proposal = _buildNewGovernorSetVotingDelayProposal(_newVotingDelay);
+        _submitPassQueueAndExecuteProposal(_majorDelegates[_proposerIndex], _proposal);
+        assertEq(governor.votingDelay(), _newVotingDelay);
+    }
+
+    function testFuzz_OldGovernorProposalCannotBePassedAfterSuccessfulUpgrade(uint256 _proposerIndex, uint _newVotingDelay) public {
+        uint _originalVotingDelay = GOVERNOR_BRAVO.votingDelay();
+        vm.assume(_newVotingDelay != _originalVotingDelay);
+        _upgradeFromBravoToCompoundGovernorViaProposalVote();
+        assertEq(timelock.admin(), address(governor));
+        uint256 _proposalId = _buildAndSubmitOldGovernorSetVotingDelayProposal(_proposerIndex, _newVotingDelay);
+        _passBravoProposal(_proposalId);
+        vm.expectRevert("Timelock::queueTransaction: Call must come from admin.");
+        GOVERNOR_BRAVO.queue(_proposalId);
+        assertEq(GOVERNOR_BRAVO.votingDelay(), _originalVotingDelay);
+    }
+
+    function testFuzz_OldGovernorProposalCanBePassedAfterFailedUpgrade(uint256 _proposerIndex, uint _newVotingDelay) public {
+        uint _originalVotingDelay = GOVERNOR_BRAVO.votingDelay();
+        vm.assume(_newVotingDelay != _originalVotingDelay);
+        console2.log("original voting delay", _originalVotingDelay);
+        console2.log("new voting delay", _newVotingDelay);
+        _failProposalVoteForUpgradeFromBravoToCompoundGovernor();
+        assertEq(timelock.admin(), GOVERNOR_BRAVO_DELEGATE_ADDRESS);
+        uint256 _proposalId = _buildAndSubmitOldGovernorSetVotingDelayProposal(_proposerIndex, _newVotingDelay);
+        _passQueueAndExecuteBravoProposal(_proposalId);
+        assertEq(GOVERNOR_BRAVO.votingDelay(), _newVotingDelay);
     }
 }
