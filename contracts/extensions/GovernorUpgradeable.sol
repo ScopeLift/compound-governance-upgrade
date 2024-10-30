@@ -689,6 +689,7 @@ abstract contract GovernorUpgradeable is Initializable, ContextUpgradeable, ERC1
 
     /// @notice Returns the details of a proposalId. Reverts if `proposalId` is not a known proposal.
     /// @param _proposalId The enumerated proposal ID.
+    /// @return The targets, values, calldatas, and descriptionHash of the proposal.
     function proposalDetails(uint256 _proposalId)
         public
         view
@@ -705,9 +706,17 @@ abstract contract GovernorUpgradeable is Initializable, ContextUpgradeable, ERC1
 
     /// @notice Returns the enumerated proposal ID for a given hashed Proposal ID.
     /// @param _hashedProposalId The hashed proposal ID.
+    /// @return The enumerated proposal ID.
     function getEnumeratedProposalIdFromHashed(uint256 _hashedProposalId) public view virtual returns (uint256) {
         return _getGovernorStorage()._hashedproposalIdToEnumeratedId[_hashedProposalId];
     }
+
+    /// @notice Returns the nex proposal ID to be used.
+    /// @return The next proposal ID.
+    function nextProposalId() public view virtual returns (uint256) {
+        return _getGovernorStorage()._nextProposalId;
+    }
+
     
     /// @dev Relays a transaction or function call to an arbitrary target. In cases where the governance executor
     /// is some contract other than the governor itself, like when using a timelock, this function can be invoked

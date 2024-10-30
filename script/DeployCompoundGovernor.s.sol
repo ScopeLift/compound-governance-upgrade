@@ -13,7 +13,6 @@ import {GovernorBravoDelegateStorageV1} from "contracts/GovernorBravoInterfaces.
 
 // Deploy script for the underlying implementation that will be used by both Governor proxies
 contract DeployCompoundGovernor is Script, CompoundGovernorConstants {
-    address constant GOVERNOR_BRAVO_DELEGATE_ADDRESS = 0xc0Da02939E1441F497fd74F78cE7Decb17B66529;
     uint256 deployerPrivateKey;
 
     function setUp() public virtual {

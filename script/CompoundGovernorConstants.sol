@@ -27,6 +27,9 @@ contract CompoundGovernorConstants {
     // The fork block for testing
     uint256 FORK_BLOCK = 21_017_323;
 
+    // The address of the GovernorBravoDelegate contract
+    address constant GOVERNOR_BRAVO_DELEGATE_ADDRESS = 0xc0Da02939E1441F497fd74F78cE7Decb17B66529;
+
     address[] public _majorDelegates;
 
     constructor() {
