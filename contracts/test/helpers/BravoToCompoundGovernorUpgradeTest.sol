@@ -188,7 +188,7 @@ abstract contract BravoToCompoundGovernorUpgradeTest is ProposalTest {
         assertEq(governor.votingDelay(), _newVotingDelay);
     }
 
-    function testFuzz_OldGovernorProposalCannotBePassedAfterSuccessfulUpgrade(uint256 _proposerIndex, uint _newVotingDelay) public {
+    function testFuzz_RevertIf_OldGovernorAttemptsQueueingAfterSuccessfulUpgrade(uint256 _proposerIndex, uint _newVotingDelay) public {
         uint _originalVotingDelay = GOVERNOR_BRAVO.votingDelay();
         vm.assume(_newVotingDelay != _originalVotingDelay);
         _upgradeFromBravoToCompoundGovernorViaProposalVote();
