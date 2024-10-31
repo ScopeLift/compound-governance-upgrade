@@ -3,6 +3,7 @@ pragma solidity 0.8.26;
 
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import {GovernorUpgradeable} from "@openzeppelin/contracts-upgradeable/governance/GovernorUpgradeable.sol";
+import {GovernorSequentialProposalIdUpgradeable} from "contracts/extensions/GovernorSequentialProposalIdUpgradeable.sol";
 import {GovernorVotesCompUpgradeable} from "contracts/extensions/GovernorVotesCompUpgradeable.sol";
 import {GovernorSettableFixedQuorumUpgradeable} from "contracts/extensions/GovernorSettableFixedQuorumUpgradeable.sol";
 import {GovernorCountingFractionalUpgradeable} from
@@ -30,6 +31,7 @@ contract CompoundGovernor is
     GovernorCountingFractionalUpgradeable,
     GovernorPreventLateQuorumUpgradeable,
     GovernorSettableFixedQuorumUpgradeable,
+    GovernorSequentialProposalIdUpgradeable,
     OwnableUpgradeable
 {
     /// @notice Emitted when the expiration of a whitelisted account is set or updated.
@@ -112,8 +114,19 @@ contract CompoundGovernor is
         __GovernorPreventLateQuorum_init(_initialVoteExtension);
         __GovernorSettableFixedQuorum_init(_quorumVotes);
         __Ownable_init(_initialOwner);
+        __GovernorSequentialProposalId_init();
         _setWhitelistGuardian(_whitelistGuardian);
         _setProposalGuardian(_proposalGuardian);
+        setNextProposalId(17);
+    }
+
+    function hashProposal(
+        address[] memory _targets,
+        uint256[] memory _values,
+        bytes[] memory _calldatas,
+        bytes32 _descriptionHash
+    ) public virtual override(GovernorUpgradeable, GovernorSequentialProposalIdUpgradeable) returns (uint256) {
+        return GovernorSequentialProposalIdUpgradeable.hashProposal(_targets, _values, _calldatas, _descriptionHash);
     }
 
     /// @notice Cancels an active proposal.

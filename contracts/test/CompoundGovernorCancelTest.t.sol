@@ -14,7 +14,7 @@ contract CompoundGovernorCancelTest is ProposalTest {
         _proposal = Proposal(_targets, _values, _calldatas, "An Empty Proposal");
     }
 
-    function _getProposalId(Proposal memory _proposal) private view returns (uint256) {
+    function _getProposalId(Proposal memory _proposal) private returns (uint256) {
         return governor.hashProposal(
             _proposal.targets, _proposal.values, _proposal.calldatas, keccak256(bytes(_proposal.description))
         );
