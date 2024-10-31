@@ -43,7 +43,7 @@ abstract contract GovernorSequentialProposalIdUpgradeable is GovernorUpgradeable
         $._nextProposalId = type(uint).max;
     }
 
-function hashProposal(
+    function hashProposal(
         address[] memory _targets,
         uint256[] memory _values,
         bytes[] memory _calldatas,
