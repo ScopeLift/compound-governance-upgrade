@@ -55,7 +55,7 @@ abstract contract GovernorSequentialProposalIdUpgradeable is GovernorUpgradeable
         if (_storedProposalId == 0) {
             _storedProposalId = $._nextProposalId;
         }
-    return _storedProposalId;
+        return _storedProposalId;
     }
 
     function getNextProposalId() public view returns (uint256) {
