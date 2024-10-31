@@ -2,22 +2,24 @@
 pragma solidity 0.8.26;
 
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import {GovernorUpgradeable} from "@openzeppelin/contracts-upgradeable/governance/GovernorUpgradeable.sol";
-import {GovernorSequentialProposalIdUpgradeable} from "contracts/extensions/GovernorSequentialProposalIdUpgradeable.sol";
+import {GovernorUpgradeable} from "contracts/extensions/GovernorUpgradeable.sol";
+import {GovernorSequentialProposalIdUpgradeable} from
+    "contracts/extensions/GovernorSequentialProposalIdUpgradeable.sol";
 import {GovernorVotesCompUpgradeable} from "contracts/extensions/GovernorVotesCompUpgradeable.sol";
 import {GovernorSettableFixedQuorumUpgradeable} from "contracts/extensions/GovernorSettableFixedQuorumUpgradeable.sol";
 import {GovernorCountingFractionalUpgradeable} from
-    "@openzeppelin/contracts-upgradeable/governance/extensions/GovernorCountingFractionalUpgradeable.sol";
+    "contracts/extensions/GovernorCountingFractionalUpgradeable.sol";
 import {GovernorTimelockCompoundUpgradeable} from
-    "@openzeppelin/contracts-upgradeable/governance/extensions/GovernorTimelockCompoundUpgradeable.sol";
+    "contracts/extensions/GovernorTimelockCompoundUpgradeable.sol";
 import {ICompoundTimelock} from "@openzeppelin/contracts/vendor/compound/ICompoundTimelock.sol";
 import {GovernorSettingsUpgradeable} from
-    "@openzeppelin/contracts-upgradeable/governance/extensions/GovernorSettingsUpgradeable.sol";
+    "contracts/extensions/GovernorSettingsUpgradeable.sol";
 import {GovernorPreventLateQuorumUpgradeable} from
-    "@openzeppelin/contracts-upgradeable/governance/extensions/GovernorPreventLateQuorumUpgradeable.sol";
+    "contracts/extensions/GovernorPreventLateQuorumUpgradeable.sol";
 import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import {IComp} from "contracts/interfaces/IComp.sol";
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
+import {GovernorBravoDelegateStorageV1} from "contracts/GovernorBravoInterfaces.sol";
 
 /// @title CompoundGovernor
 /// @author [ScopeLift](https://scopelift.co)
@@ -69,6 +71,9 @@ contract CompoundGovernor is
         uint96 expiration;
     }
 
+        GovernorBravoDelegateStorageV1 private constant compoundGovernorBravo =
+        GovernorBravoDelegateStorageV1(0xc0Da02939E1441F497fd74F78cE7Decb17B66529);
+
     /// @notice Address which manages whitelisted proposals and whitelist accounts.
     /// @dev This address has the ability to set account whitelist expirations and can be changed through the governance
     /// process.
@@ -117,7 +122,13 @@ contract CompoundGovernor is
         __GovernorSequentialProposalId_init();
         _setWhitelistGuardian(_whitelistGuardian);
         _setProposalGuardian(_proposalGuardian);
-        setNextProposalId(17);
+    }
+
+    function setNextProposalId() external {
+        if (_executor() != _msgSender()) {
+            revert GovernorOnlyExecutor(_msgSender());
+        }
+        _setNextProposalId(compoundGovernorBravo.proposalCount());
     }
 
     function hashProposal(
@@ -127,6 +138,16 @@ contract CompoundGovernor is
         bytes32 _descriptionHash
     ) public virtual override(GovernorUpgradeable, GovernorSequentialProposalIdUpgradeable) returns (uint256) {
         return GovernorSequentialProposalIdUpgradeable.hashProposal(_targets, _values, _calldatas, _descriptionHash);
+    }
+
+    function _propose(
+        address[] memory targets,
+        uint256[] memory values,
+        bytes[] memory calldatas,
+        string memory description,
+        address proposer
+    ) internal override(GovernorUpgradeable, GovernorSequentialProposalIdUpgradeable) returns (uint) {
+        return GovernorSequentialProposalIdUpgradeable._propose(targets, values, calldatas, description, proposer);
     }
 
     /// @notice Cancels an active proposal.
@@ -159,6 +180,7 @@ contract CompoundGovernor is
 
         return _cancel(targets, values, calldatas, descriptionHash);
     }
+
 
     /// @notice Sets or updates the whitelist expiration for a specific account.
     /// @notice A whitelisted account's proposals cannot be canceled by anyone except the `whitelistGuardian` when its

@@ -2,9 +2,11 @@
 
 pragma solidity ^0.8.20;
 
-import {GovernorUpgradeable} from "@openzeppelin/contracts-upgradeable/governance/GovernorUpgradeable.sol";
+import {GovernorUpgradeable} from "contracts/extensions/GovernorUpgradeable.sol";
 
 abstract contract GovernorSequentialProposalIdUpgradeable is GovernorUpgradeable {
+    
+    error ProposalIdAlreadySet();
 
     /// @dev Storage structure to store proposal details.
     struct ProposalDetails {
@@ -15,8 +17,6 @@ abstract contract GovernorSequentialProposalIdUpgradeable is GovernorUpgradeable
     }
 
     struct GovernorSequentialProposalIdStorage {
-        /// @notice The total number of proposals created.
-        uint256 _proposalCount;
         /// @notice The next proposal ID to assign to a proposal.
         uint256 _nextProposalId;
         /// @notice A mapping for proposal IDs, indexed via the hash of the proposal.
@@ -35,12 +35,15 @@ abstract contract GovernorSequentialProposalIdUpgradeable is GovernorUpgradeable
     }
 
     function __GovernorSequentialProposalId_init() internal onlyInitializing {
+        __GovernorSequentialProposalId_init_unchained();
     }
 
     function __GovernorSequentialProposalId_init_unchained() internal onlyInitializing {
+        GovernorSequentialProposalIdStorage storage $ = _getGovernorSequentialProposalIdStorage();
+        $._nextProposalId = type(uint).max;
     }
 
-    function hashProposal(
+function hashProposal(
         address[] memory _targets,
         uint256[] memory _values,
         bytes[] memory _calldatas,
@@ -50,17 +53,9 @@ abstract contract GovernorSequentialProposalIdUpgradeable is GovernorUpgradeable
         GovernorSequentialProposalIdStorage storage $ = _getGovernorSequentialProposalIdStorage();
         uint256 _storedProposalId = $._proposalIds[_proposalHash];
         if (_storedProposalId == 0) {
-            _storedProposalId = $._nextProposalId++;
-            $._proposalIds[_proposalHash] = _storedProposalId;
-            $._proposalDetails[_storedProposalId] = ProposalDetails({
-                targets: _targets,
-                values: _values,
-                calldatas: _calldatas,
-                descriptionHash: _descriptionHash
-            });
-            $._proposalCount++;
+            _storedProposalId = $._nextProposalId;
         }
-        return _storedProposalId;
+    return _storedProposalId;
     }
 
     function getNextProposalId() public view returns (uint256) {
@@ -68,9 +63,35 @@ abstract contract GovernorSequentialProposalIdUpgradeable is GovernorUpgradeable
         return $._nextProposalId;
     }
 
-    function setNextProposalId(uint256 _nextProposalId) public {
+    function _setNextProposalId(uint256 _proposalId) internal virtual {
         GovernorSequentialProposalIdStorage storage $ = _getGovernorSequentialProposalIdStorage();
-        $._nextProposalId = _nextProposalId;
+        if ($._nextProposalId != type(uint256).max) {
+            revert ProposalIdAlreadySet();
+        }
+        $._nextProposalId = _proposalId;
+    }
+
+     function _propose(
+        address[] memory _targets,
+        uint256[] memory _values,
+        bytes[] memory _calldatas,
+        string memory _description,
+        address _proposer
+    ) internal virtual override returns (uint256) {
+       GovernorSequentialProposalIdStorage storage $ = _getGovernorSequentialProposalIdStorage();
+        uint256 _proposalId = super._propose(_targets, _values, _calldatas, _description,_proposer);
+        bytes32 _descriptionHash = keccak256(bytes(_description));
+        uint256 _proposalHash = super.hashProposal(_targets, _values, _calldatas, _descriptionHash);
+
+        $._proposalIds[_proposalHash] = _proposalId;
+        $._proposalDetails[_proposalId] = ProposalDetails({
+            targets: _targets,
+            values: _values,
+            calldatas: _calldatas,
+            descriptionHash: _descriptionHash
+        });
+        $._nextProposalId++;
+        return _proposalId;
     }
 
     /// @notice Version of {IGovernor-queue} with only enumerated `proposalId` as an argument.
@@ -124,6 +145,6 @@ abstract contract GovernorSequentialProposalIdUpgradeable is GovernorUpgradeable
     /// @return The number of stored proposals.
     function proposalCount() public view virtual returns (uint256) {
         GovernorSequentialProposalIdStorage storage $ = _getGovernorSequentialProposalIdStorage();
-        return $._proposalCount;
+        return $._nextProposalId;
     }
 }
