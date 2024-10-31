@@ -5,18 +5,15 @@ import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Ini
 import {GovernorUpgradeable} from "contracts/extensions/GovernorUpgradeable.sol";
 import {GovernorVotesCompUpgradeable} from "contracts/extensions/GovernorVotesCompUpgradeable.sol";
 import {GovernorSettableFixedQuorumUpgradeable} from "contracts/extensions/GovernorSettableFixedQuorumUpgradeable.sol";
-import {GovernorCountingFractionalUpgradeable} from
-    "contracts/extensions/GovernorCountingFractionalUpgradeable.sol";
-import {GovernorTimelockCompoundUpgradeable} from
-    "contracts/extensions/GovernorTimelockCompoundUpgradeable.sol";
+import {GovernorCountingFractionalUpgradeable} from "contracts/extensions/GovernorCountingFractionalUpgradeable.sol";
+import {GovernorTimelockCompoundUpgradeable} from "contracts/extensions/GovernorTimelockCompoundUpgradeable.sol";
 import {ICompoundTimelock} from "@openzeppelin/contracts/vendor/compound/ICompoundTimelock.sol";
-import {GovernorSettingsUpgradeable} from
-    "contracts/extensions/GovernorSettingsUpgradeable.sol";
-import {GovernorPreventLateQuorumUpgradeable} from
-    "contracts/extensions/GovernorPreventLateQuorumUpgradeable.sol";
+import {GovernorSettingsUpgradeable} from "contracts/extensions/GovernorSettingsUpgradeable.sol";
+import {GovernorPreventLateQuorumUpgradeable} from "contracts/extensions/GovernorPreventLateQuorumUpgradeable.sol";
 import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import {IComp} from "contracts/interfaces/IComp.sol";
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
+import {GovernorBravoDelegateStorageV1} from "contracts/GovernorBravoInterfaces.sol";
 
 /// @title CompoundGovernor
 /// @author [ScopeLift](https://scopelift.co)
@@ -79,8 +76,11 @@ contract CompoundGovernor is
         address initialOwner;
         address whitelistGuardian;
         ProposalGuardian proposalGuardian;
-        uint256 startingProposalId;
+        address compoundGovernorBravo;
     }
+
+    GovernorBravoDelegateStorageV1 private constant compoundGovernorBravo =
+        GovernorBravoDelegateStorageV1(0xc0Da02939E1441F497fd74F78cE7Decb17B66529);
 
     /// @notice Address which manages whitelisted proposals and whitelist accounts.
     /// @dev This address has the ability to set account whitelist expirations and can be changed through the governance
@@ -102,7 +102,7 @@ contract CompoundGovernor is
     /// @notice Initialize Governor.
     /// @param _initializer The initialization structure.
     function initialize(CompoundGovernorInitializer memory _initializer) public initializer {
-        __Governor_init("Compound Governor", _initializer.startingProposalId);
+        __Governor_init("Compound Governor");
         __GovernorSettings_init(
             _initializer.initialVotingDelay, _initializer.initialVotingPeriod, _initializer.initialProposalThreshold
         );
@@ -113,6 +113,13 @@ contract CompoundGovernor is
         __Ownable_init(_initializer.initialOwner);
         _setWhitelistGuardian(_initializer.whitelistGuardian);
         _setProposalGuardian(_initializer.proposalGuardian);
+    }
+
+    function setNextProposalId() external {
+        if (_executor() != _msgSender()) {
+            revert GovernorOnlyExecutor(_msgSender());
+        }
+        _setNextProposalId(compoundGovernorBravo.proposalCount());
     }
 
     /// @notice Cancels an active proposal.
@@ -131,7 +138,7 @@ contract CompoundGovernor is
         bytes32 descriptionHash
     ) public override returns (uint256) {
         uint256 _hashedProposalId = hashProposal(targets, values, calldatas, descriptionHash);
-        uint256 _proposalId = getEnumeratedProposalIdFromHashed(_hashedProposalId);
+        uint256 _proposalId = _getEnumeratedProposalIdFromHashed(_hashedProposalId);
         address _proposer = proposalProposer(_proposalId);
 
         if (msg.sender != _proposer && msg.sender != proposalGuardian.account) {

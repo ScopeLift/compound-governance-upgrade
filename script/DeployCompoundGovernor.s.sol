@@ -26,10 +26,6 @@ contract DeployCompoundGovernor is Script, CompoundGovernorConstants {
         public
         returns (CompoundGovernor _governor)
     {
-        GovernorBravoDelegateStorageV1 _governorBravoStorage =
-            GovernorBravoDelegateStorageV1(GOVERNOR_BRAVO_DELEGATE_ADDRESS);
-        uint256 _startingProposalId = _governorBravoStorage.proposalCount();
-
         vm.startBroadcast(deployerPrivateKey);
 
         // Deploy Governor implementation contract
@@ -47,7 +43,7 @@ contract DeployCompoundGovernor is Script, CompoundGovernorConstants {
             initialOwner: _owner,
             whitelistGuardian: _whitelistGuardian,
             proposalGuardian: _proposalGuardian,
-            startingProposalId: _startingProposalId
+            compoundGovernorBravo: GOVERNOR_BRAVO_DELEGATE_ADDRESS
         });
 
         bytes memory _initData = abi.encodeCall(CompoundGovernor.initialize, (_initializer));
