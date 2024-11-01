@@ -7,12 +7,6 @@ import {IGovernor} from "contracts/extensions/IGovernor.sol";
 import {CompoundGovernor} from "contracts/CompoundGovernor.sol";
 
 contract CompoundGovernorCancelTest is CompoundGovernorTest {
-    function _getProposalId(Proposal memory _proposal) private returns (uint256) {
-        return governor.hashProposal(
-            _proposal.targets, _proposal.values, _proposal.calldatas, keccak256(bytes(_proposal.description))
-        );
-    }
-
     function _setWhitelistedProposer(address _proposer) private {
         vm.prank(whitelistGuardian);
         governor.setWhitelistAccountExpiration(_proposer, block.timestamp + 2_000_000);

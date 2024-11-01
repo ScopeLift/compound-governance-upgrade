@@ -80,6 +80,12 @@ contract CompoundGovernorTest is Test, CompoundGovernorConstants {
 
     /* Begin CompoundGovernor-related helper methods */
 
+    function _getProposalId(Proposal memory _proposal) internal returns (uint256) {
+        return governor.hashProposal(
+            _proposal.targets, _proposal.values, _proposal.calldatas, keccak256(bytes(_proposal.description))
+        );
+    }
+
     function _buildProposalData(string memory _signature, bytes memory _calldata)
         internal
         pure
