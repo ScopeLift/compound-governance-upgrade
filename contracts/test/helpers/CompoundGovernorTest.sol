@@ -40,10 +40,10 @@ contract CompoundGovernorTest is Test, CompoundGovernorConstants {
             DeployCompoundGovernor _deployer = new DeployCompoundGovernor();
             _deployer.setUp();
             governor = _deployer.run(owner, whitelistGuardian, proposalGuardian);
-            token = governor.token();
             governor = _deployer.run(owner, whitelistGuardian, proposalGuardian);
         }
         timelock = ICompoundTimelock(payable(governor.timelock()));
+        token = governor.token();
         vm.label(GOVERNOR_BRAVO_DELEGATE_ADDRESS, "GovernorBravoDelegate");
         vm.label(owner, "Owner");
         vm.label(address(governor), "CompoundGovernor");
