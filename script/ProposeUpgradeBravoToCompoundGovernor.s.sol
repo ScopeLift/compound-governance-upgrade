@@ -10,9 +10,6 @@ import {GovernorBravoDelegate} from "contracts/GovernorBravoDelegate.sol";
 
 /// @notice Script to submit the proposal to upgrade from GovernorBravo to  CompoundGovernor.
 contract ProposeUpgradeBravoToCompoundGovernor is Script, CompoundGovernorConstants {
-    // GovernorBravo to receive upgrade proposal
-    address constant GOVERNOR_BRAVO_DELEGATE_ADDRESS = 0xc0Da02939E1441F497fd74F78cE7Decb17B66529;
-
     GovernorBravoDelegate public constant GOVERNOR_BRAVO = GovernorBravoDelegate(GOVERNOR_BRAVO_DELEGATE_ADDRESS);
 
     function propose(CompoundGovernor _newGovernor) internal returns (uint256 _proposalId) {

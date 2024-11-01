@@ -18,13 +18,7 @@ contract CompoundGovernorTest is Test, CompoundGovernorConstants {
     CompoundGovernor.ProposalGuardian proposalGuardian;
     uint96 constant PROPOSAL_GUARDIAN_EXPIRY = 1_739_768_400;
 
-    // GovernorBravo to receive upgrade proposal
-    address constant GOVERNOR_BRAVO_DELEGATE_ADDRESS = 0xc0Da02939E1441F497fd74F78cE7Decb17B66529;
     GovernorBravoDelegate public constant GOVERNOR_BRAVO = GovernorBravoDelegate(GOVERNOR_BRAVO_DELEGATE_ADDRESS);
-
-    // The deployed CompooundGovernor address for testing upgradability after deployment
-    // TODO: for now, just a placeholder
-    address constant DEPLOYED_COMPOUND_GOVERNOR = 0x1111111111111111111111111111111111111111;
 
     function setUp() public virtual {
         // set the RPC URL and the fork block number to create a local execution fork for testing
@@ -32,7 +26,7 @@ contract CompoundGovernorTest is Test, CompoundGovernorConstants {
 
         if (_useDeployedCompoundGovernor()) {
             // Set the governor to be the deployed CompoundGovernor
-            governor = CompoundGovernor(payable(DEPLOYED_COMPOUND_GOVERNOR));
+            governor = CompoundGovernor(payable(DEPLOYED_UPGRADE_CANDIDATE));
             owner = governor.owner();
             whitelistGuardian = governor.whitelistGuardian();
             (proposalGuardian.account, proposalGuardian.expiration) = governor.proposalGuardian();
@@ -49,7 +43,7 @@ contract CompoundGovernorTest is Test, CompoundGovernorConstants {
             token = governor.token();
             governor = _deployer.run(owner, whitelistGuardian, proposalGuardian);
         }
-            timelock = ICompoundTimelock(payable(governor.timelock()));
+        timelock = ICompoundTimelock(payable(governor.timelock()));
         vm.label(GOVERNOR_BRAVO_DELEGATE_ADDRESS, "GovernorBravoDelegate");
         vm.label(owner, "Owner");
         vm.label(address(governor), "CompoundGovernor");

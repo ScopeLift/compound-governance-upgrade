@@ -30,6 +30,13 @@ contract CompoundGovernorConstants {
 
     uint8 constant VOTE_TYPE_FRACTIONAL = 255;
 
+    // GovernorBravo to receive upgrade proposal
+    address constant GOVERNOR_BRAVO_DELEGATE_ADDRESS = 0xc0Da02939E1441F497fd74F78cE7Decb17B66529;
+
+    // The deployed CompooundGovernor address for testing upgradability after deployment
+    // TODO: for now, just a placeholder
+    address constant DEPLOYED_UPGRADE_CANDIDATE = 0x1111111111111111111111111111111111111111;
+
     address[] public _majorDelegates;
 
     constructor() {
