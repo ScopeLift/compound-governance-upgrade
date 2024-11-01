@@ -6,6 +6,7 @@ import {ICompoundTimelock} from "@openzeppelin/contracts/vendor/compound/ICompou
 import {CompoundGovernorConstants} from "script/CompoundGovernorConstants.sol";
 import {DeployCompoundGovernor} from "script/DeployCompoundGovernor.s.sol";
 import {CompoundGovernor} from "contracts/CompoundGovernor.sol";
+import {GovernorBravoDelegate} from "contracts/GovernorBravoDelegate.sol";
 import {IComp} from "contracts/interfaces/IComp.sol";
 
 contract CompoundGovernorTest is Test, CompoundGovernorConstants {
@@ -17,32 +18,51 @@ contract CompoundGovernorTest is Test, CompoundGovernorConstants {
     CompoundGovernor.ProposalGuardian proposalGuardian;
     uint96 constant PROPOSAL_GUARDIAN_EXPIRY = 1_739_768_400;
 
+    // GovernorBravo to receive upgrade proposal
+    address constant GOVERNOR_BRAVO_DELEGATE_ADDRESS = 0xc0Da02939E1441F497fd74F78cE7Decb17B66529;
+    GovernorBravoDelegate public constant GOVERNOR_BRAVO = GovernorBravoDelegate(GOVERNOR_BRAVO_DELEGATE_ADDRESS);
+
+    // The deployed CompooundGovernor address for testing upgradability after deployment
+    // TODO: for now, just a placeholder
+    address constant DEPLOYED_COMPOUND_GOVERNOR = 0x1111111111111111111111111111111111111111;
+
     function setUp() public virtual {
-        // set the owner of the governor (use the anvil default account #0, if no environment variable is set)
-        owner = vm.envOr("DEPLOYER_ADDRESS", 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266);
-        whitelistGuardian = makeAddr("WHITELIST_GUARDIAN_ADDRESS");
-        proposalGuardian = CompoundGovernor.ProposalGuardian(COMMUNITY_MULTISIG_ADDRESS, PROPOSAL_GUARDIAN_EXPIRY);
         // set the RPC URL and the fork block number to create a local execution fork for testing
         vm.createSelectFork(vm.envOr("RPC_URL", string("Please set RPC_URL in your .env file")), FORK_BLOCK);
 
-        // Deploy the CompoundGovernor contract
-        DeployCompoundGovernor _deployer = new DeployCompoundGovernor();
-        _deployer.setUp();
-        governor = _deployer.run(owner, whitelistGuardian, proposalGuardian);
-        token = governor.token();
-        timelock = ICompoundTimelock(payable(governor.timelock()));
-        governor = _deployer.run(owner, whitelistGuardian, proposalGuardian);
+        if (_useDeployedCompoundGovernor()) {
+            // Set the governor to be the deployed CompoundGovernor
+            governor = CompoundGovernor(payable(DEPLOYED_COMPOUND_GOVERNOR));
+            owner = governor.owner();
+            whitelistGuardian = governor.whitelistGuardian();
+            (proposalGuardian.account, proposalGuardian.expiration) = governor.proposalGuardian();
+        } else {
+            // set the owner of the governor (use the anvil default account #0, if no environment variable is set)
+            owner = vm.envOr("DEPLOYER_ADDRESS", 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266);
+            whitelistGuardian = makeAddr("WHITELIST_GUARDIAN_ADDRESS");
+            proposalGuardian = CompoundGovernor.ProposalGuardian(COMMUNITY_MULTISIG_ADDRESS, PROPOSAL_GUARDIAN_EXPIRY);
+
+            // Deploy the CompoundGovernor contract
+            DeployCompoundGovernor _deployer = new DeployCompoundGovernor();
+            _deployer.setUp();
+            governor = _deployer.run(owner, whitelistGuardian, proposalGuardian);
+            token = governor.token();
+            governor = _deployer.run(owner, whitelistGuardian, proposalGuardian);
+        }
+            timelock = ICompoundTimelock(payable(governor.timelock()));
+        vm.label(GOVERNOR_BRAVO_DELEGATE_ADDRESS, "GovernorBravoDelegate");
+        vm.label(owner, "Owner");
+        vm.label(address(governor), "CompoundGovernor");
+        vm.label(address(timelock), "Timelock");
+        vm.label(COMP_TOKEN_ADDRESS, "CompToken");
     }
 
-    function _updateTimelockAdminToNewGovernor(CompoundGovernor _newGovernor) internal {
-        address _timelockAddress = governor.timelock();
-        ICompoundTimelock _timelock = ICompoundTimelock(payable(_timelockAddress));
-        vm.startPrank(_timelockAddress);
-        _timelock.setPendingAdmin(address(_newGovernor));
-        _newGovernor.setNextProposalId();
-        vm.stopPrank();
-        vm.prank(address(_newGovernor));
-        _timelock.acceptAdmin();
+    function _useDeployedCompoundGovernor() internal pure virtual returns (bool) {
+        return false;
+    }
+
+    function _shouldPassAndExecuteUpgradeProposal() internal pure virtual returns (bool) {
+        return true;
     }
 
     function _timelockOrWhitelistGuardian(uint256 _randomSeed) internal view returns (address) {

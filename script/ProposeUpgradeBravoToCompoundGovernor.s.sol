@@ -16,21 +16,26 @@ contract ProposeUpgradeBravoToCompoundGovernor is Script, CompoundGovernorConsta
     GovernorBravoDelegate public constant GOVERNOR_BRAVO = GovernorBravoDelegate(GOVERNOR_BRAVO_DELEGATE_ADDRESS);
 
     function propose(CompoundGovernor _newGovernor) internal returns (uint256 _proposalId) {
-        address[] memory _targets = new address[](2);
-        uint256[] memory _values = new uint256[](2);
-        string[] memory _signatures = new string[](2);
-        bytes[] memory _calldatas = new bytes[](2);
+        address[] memory _targets = new address[](3);
+        uint256[] memory _values = new uint256[](3);
+        string[] memory _signatures = new string[](3);
+        bytes[] memory _calldatas = new bytes[](3);
 
-        _targets[0] = _newGovernor.timelock();
+        _targets[0] = address(_newGovernor);
         _values[0] = 0;
-        _signatures[0] = "setPendingAdmin(address)";
-        _calldatas[0] = abi.encode(address(_newGovernor));
+        _signatures[0] = "setNextProposalId()";
+        _calldatas[0] = "";
 
-        _targets[1] = address(_newGovernor);
+        _targets[1] = _newGovernor.timelock();
         _values[1] = 0;
-        _signatures[1] = "__acceptAdmin()";
-        _calldatas[1] = "";
+        _signatures[1] = "setPendingAdmin(address)";
+        _calldatas[1] = abi.encode(address(_newGovernor));
 
+        _targets[2] = address(_newGovernor);
+        _values[2] = 0;
+        _signatures[2] = "__acceptAdmin()";
+        _calldatas[2] = "";
+        
         return GOVERNOR_BRAVO.propose(
             _targets, _values, _signatures, _calldatas, "Upgrade GovernorBravo to CompoundGovernor"
         );
