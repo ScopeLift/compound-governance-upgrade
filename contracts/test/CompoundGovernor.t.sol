@@ -4,7 +4,10 @@ pragma solidity 0.8.26;
 import {CompoundGovernorTest} from "contracts/test/helpers/CompoundGovernorTest.sol";
 import {IGovernor} from "contracts/extensions/IGovernor.sol";
 import {CompoundGovernor} from "contracts/CompoundGovernor.sol";
-import {GovernorCountingFractionalUpgradeable} from "contracts/CompoundGovernor.sol";
+import {GovernorCountingFractionalUpgradeable} from "contracts/extensions/GovernorCountingFractionalUpgradeable.sol";
+import {GovernorCountingSimpleUpgradeable} from "contracts/extensions/GovernorCountingSimpleUpgradeable.sol";
+
+import {console2} from "forge-std/Test.sol";
 
 contract Initialize is CompoundGovernorTest {
     function test_Initialize() public view {
@@ -735,4 +738,212 @@ contract CastVoteWithReasonAndParams is CompoundGovernorTest {
         );
         governor.castVoteWithReasonAndParams(_proposalId, VOTE_TYPE_FRACTIONAL, "MyReason", _newParams);
     }
+}
+
+contract ProposalDeadline is CompoundGovernorTest {
+    function testFuzz_ProposalDeadlineCorrectWithEnumeratedId(uint256 _proposerIndex) public {
+        _proposerIndex = bound(_proposerIndex, 0, _majorDelegates.length - 1);
+        address _proposer = _majorDelegates[_proposerIndex];
+        uint256 _clockAtSubmit = governor.clock();
+        Proposal memory _proposal = _buildAnEmptyProposal();
+        uint256 _proposalId = _submitProposal(_proposer, _proposal);
+        uint256 _deadline = governor.proposalDeadline(_proposalId);
+        assertEq(_deadline, _clockAtSubmit + INITIAL_VOTING_DELAY + INITIAL_VOTING_PERIOD);
+    }
+
+    function testFuzz_ZeroReturnedIf_ProposalDeadlineCalledWithInvalidProposalId(
+        uint256 _invalidProposalId,
+        uint256 _proposerIndex
+    ) public {
+        _proposerIndex = bound(_proposerIndex, 0, _majorDelegates.length - 1);
+        address _proposer = _majorDelegates[_proposerIndex];
+        Proposal memory _proposal = _buildAnEmptyProposal();
+        uint256 _proposalId = _submitProposal(_proposer, _proposal);
+        vm.assume(_invalidProposalId != _proposalId);
+        uint256 _deadline = governor.proposalDeadline(_invalidProposalId);
+        assertEq(_deadline, 0);
+    }
+}
+        
+
+contract ProposalSnapshot is CompoundGovernorTest {
+    function testFuzz_ProposalSnapshotCorrectWithEnumeratedId(uint256 _proposerIndex) public {
+        _proposerIndex = bound(_proposerIndex, 0, _majorDelegates.length - 1);
+        address _proposer = _majorDelegates[_proposerIndex];
+        uint256 _clockAtSubmit = governor.clock();
+        Proposal memory _proposal = _buildAnEmptyProposal();
+        uint256 _proposalId = _submitProposal(_proposer, _proposal);
+        uint256 _snapShot = governor.proposalSnapshot(_proposalId);
+        assertEq(_snapShot, _clockAtSubmit + INITIAL_VOTING_DELAY);
+    }
+
+    function testFuzz_ZeroReturnedIf_ProposalSnapshotCalledWithInvalidProposalId(
+        uint256 _invalidProposalId,
+        uint256 _proposerIndex
+    ) public {
+        _proposerIndex = bound(_proposerIndex, 0, _majorDelegates.length - 1);
+        address _proposer = _majorDelegates[_proposerIndex];
+        Proposal memory _proposal = _buildAnEmptyProposal();
+        uint256 _proposalId = _submitProposal(_proposer, _proposal);
+        vm.assume(_invalidProposalId != _proposalId);
+        uint256 _snapShot = governor.proposalSnapshot(_invalidProposalId);
+        assertEq(_snapShot, 0);
+    }
+}
+
+contract ProposalEta is CompoundGovernorTest {
+    function testFuzz_ProposalEtaCorrectWithEnumeratedId(uint256 _proposerIndex) public {
+        _proposerIndex = bound(_proposerIndex, 0, _majorDelegates.length - 1);
+        address _proposer = _majorDelegates[_proposerIndex];
+        Proposal memory _proposal = _buildAnEmptyProposal();
+        uint256 _proposalId = _submitProposal(_proposer, _proposal);
+        _passProposal(_proposalId);
+        vm.roll(vm.getBlockNumber() + INITIAL_VOTING_PERIOD + 1);
+        uint256 _timeOfQueue = block.timestamp;
+        governor.queue(_proposalId);
+        uint256 _eta = governor.proposalEta(_proposalId);
+        assertEq(_eta, _timeOfQueue + timelock.delay());
+    }
+
+    function testFuzz_ZeroReturnedIf_ProposalEtaCalledWithInvalidProposalId(
+        uint256 _invalidProposalId,
+        uint256 _proposerIndex
+    ) public {
+        _proposerIndex = bound(_proposerIndex, 0, _majorDelegates.length - 1);
+        address _proposer = _majorDelegates[_proposerIndex];
+        Proposal memory _proposal = _buildAnEmptyProposal();
+        uint256 _proposalId = _submitProposal(_proposer, _proposal);
+        _passProposal(_proposalId);
+        vm.assume(_invalidProposalId != _proposalId);
+        vm.roll(vm.getBlockNumber() + INITIAL_VOTING_PERIOD + 1);
+        governor.queue(_proposalId);
+        uint256 _eta = governor.proposalEta(_invalidProposalId);
+        assertEq(_eta, 0);
+    }
+}
+
+contract ProposalProposer is CompoundGovernorTest {
+    function testFuzz_ProposalProposerCorrectWithEnumeratedId(uint256 _proposerIndex) public {
+        _proposerIndex = bound(_proposerIndex, 0, _majorDelegates.length - 1);
+        address _proposerExpected = _majorDelegates[_proposerIndex];
+        Proposal memory _proposal = _buildAnEmptyProposal();
+        uint256 _proposalId = _submitProposal(_proposerExpected, _proposal);
+        address _proposer = governor.proposalProposer(_proposalId);
+        assertEq(_proposerExpected, _proposer);
+    }
+
+    function testFuzz_ZeroReturnedIf_ProposalProposerCalledWithInvalidProposalId(
+        uint256 _invalidProposalId,
+        uint256 _proposerIndex
+    ) public {
+        _proposerIndex = bound(_proposerIndex, 0, _majorDelegates.length - 1);
+        address _proposerExpected = _majorDelegates[_proposerIndex];
+        Proposal memory _proposal = _buildAnEmptyProposal();
+        uint256 _proposalId = _submitProposal(_proposerExpected, _proposal);
+        vm.assume(_invalidProposalId != _proposalId);
+        address _proposer = governor.proposalProposer(_invalidProposalId);
+        assertEq(_proposer, address(0));
+    }
+}
+
+contract ProposalNeedsQueing is CompoundGovernorTest {
+    function testFuzz_ProposalNeedsQueuingCorrectWithEnumeratedId(uint256 _proposerIndex) public {
+        _proposerIndex = bound(_proposerIndex, 0, _majorDelegates.length - 1);
+        address _proposerExpected = _majorDelegates[_proposerIndex];
+        Proposal memory _proposal = _buildAnEmptyProposal();
+        uint256 _proposalId = _submitProposal(_proposerExpected, _proposal);
+        bool _queuingNeeded = governor.proposalNeedsQueuing(_proposalId);
+        assertEq(_queuingNeeded, true);
+    }
+}
+
+contract ProposalThreshold is CompoundGovernorTest {
+    function test_ProposalThreshold() public view {
+        assertEq(governor.proposalThreshold(), INITIAL_PROPOSAL_THRESHOLD);
+    }
+}
+
+contract State is CompoundGovernorTest {
+    function testFuzz_ReturnsCorrectStateWhenPending(uint256 _proposerIndex) public {
+        _proposerIndex = bound(_proposerIndex, 0, _majorDelegates.length - 1);
+        address _proposer = _majorDelegates[_proposerIndex];
+        Proposal memory _proposal = _buildAnEmptyProposal();
+        vm.prank(_proposer);
+        uint256 _proposalId = governor.propose(
+            _proposal.targets, _proposal.values, _proposal.calldatas, _proposal.description
+        );
+        assertEq(uint8(governor.state(_proposalId)), uint8(IGovernor.ProposalState.Pending));
+    }
+
+    function testFuzz_ReturnsCorrectStateWhenActive(uint256 _proposerIndex) public {
+        _proposerIndex = bound(_proposerIndex, 0, _majorDelegates.length - 1);
+        address _proposer = _majorDelegates[_proposerIndex];
+        Proposal memory _proposal = _buildAnEmptyProposal();
+        uint256 _proposalId = _submitProposal(_proposer, _proposal);
+        assertEq(uint8(governor.state(_proposalId)), uint8(IGovernor.ProposalState.Active));
+    }
+
+    function testFuzz_ReturnsCorrectStateWhenCanceled(uint256 _proposerIndex) public {
+        _proposerIndex = bound(_proposerIndex, 0, _majorDelegates.length - 1);
+        address _proposer = _majorDelegates[_proposerIndex];
+        Proposal memory _proposal = _buildAnEmptyProposal();
+        vm.prank(_proposer);
+        uint256 _proposalId = governor.propose(
+            _proposal.targets, _proposal.values, _proposal.calldatas, _proposal.description
+        );
+        vm.prank(_proposer);
+        governor.cancel(_proposalId);
+        assertEq(uint8(governor.state(_proposalId)), uint8(IGovernor.ProposalState.Canceled));
+    }
+
+    function testFuzz_ReturnsCorrectStateWhenSucceeded(uint256 _proposerIndex) public {
+        _proposerIndex = bound(_proposerIndex, 0, _majorDelegates.length - 1);
+        address _proposer = _majorDelegates[_proposerIndex];
+        Proposal memory _proposal = _buildAnEmptyProposal();
+        uint256 _proposalId = _submitProposal(_proposer, _proposal);
+        _passProposal(_proposalId);
+        vm.roll(vm.getBlockNumber() + INITIAL_VOTING_PERIOD + 1);
+        assertEq(uint8(governor.state(_proposalId)), uint8(IGovernor.ProposalState.Succeeded));
+    }
+
+    function testFuzz_ReturnsCorrectStateWhenDefeated(uint256 _proposerIndex) public {
+        _proposerIndex = bound(_proposerIndex, 0, _majorDelegates.length - 1);
+        address _proposer = _majorDelegates[_proposerIndex];
+        Proposal memory _proposal = _buildAnEmptyProposal();
+        uint256 _proposalId = _submitProposal(_proposer, _proposal);
+        _failProposal(_proposalId);
+        vm.roll(vm.getBlockNumber() + INITIAL_VOTING_PERIOD + 1);
+        assertEq(uint8(governor.state(_proposalId)), uint8(IGovernor.ProposalState.Defeated));
+    }
+
+    function testFuzz_ReturnsCorrectStateWhenQueued(uint256 _proposerIndex) public {
+        _proposerIndex = bound(_proposerIndex, 0, _majorDelegates.length - 1);
+        address _proposer = _majorDelegates[_proposerIndex];
+        Proposal memory _proposal = _buildAnEmptyProposal();
+        uint256 _proposalId = _submitProposal(_proposer, _proposal);
+        _passAndQueueProposal(_proposal, _proposalId);
+        vm.roll(vm.getBlockNumber() + INITIAL_VOTING_PERIOD + 1);
+        assertEq(uint8(governor.state(_proposalId)), uint8(IGovernor.ProposalState.Queued));
+    }
+
+    function testFuzz_ReturnsCorrectStateWhenExecuted(uint256 _proposerIndex) public {
+        _proposerIndex = bound(_proposerIndex, 0, _majorDelegates.length - 1);
+        address _proposer = _majorDelegates[_proposerIndex];
+        Proposal memory _proposal = _buildAnEmptyProposal();
+        uint256 _proposalId = _submitProposal(_proposer, _proposal);
+        _passQueueAndExecuteProposal(_proposal, _proposalId);
+        vm.roll(vm.getBlockNumber() + INITIAL_VOTING_PERIOD + 1);
+        assertEq(uint8(governor.state(_proposalId)), uint8(IGovernor.ProposalState.Executed));
+    }
+
+    function testFuzz_ReturnsCorrectStateWhenExpired(uint256 _proposerIndex) public {
+        _proposerIndex = bound(_proposerIndex, 0, _majorDelegates.length - 1);
+        address _proposer = _majorDelegates[_proposerIndex];
+        Proposal memory _proposal = _buildAnEmptyProposal();
+        uint256 _proposalId = _submitProposal(_proposer, _proposal);
+        _passAndQueueProposal(_proposal, _proposalId);
+        vm.warp(governor.proposalEta(_proposalId) + timelock.GRACE_PERIOD() + 1);
+        assertEq(uint8(governor.state(_proposalId)), uint8(IGovernor.ProposalState.Expired));
+    }
+
 }
