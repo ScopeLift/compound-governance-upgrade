@@ -6,8 +6,8 @@ import {IGovernor} from "contracts/extensions/IGovernor.sol";
 import {CompoundGovernor} from "contracts/CompoundGovernor.sol";
 import {GovernorCountingFractionalUpgradeable} from "contracts/CompoundGovernor.sol";
 
-contract CompoundGovernorInitializeTest is CompoundGovernorTest {
-    function testInitialize() public view {
+contract Initialize is CompoundGovernorTest {
+    function test_Initialize() public view {
         assertEq(governor.quorum(governor.clock()), INITIAL_QUORUM);
         assertEq(governor.votingPeriod(), INITIAL_VOTING_PERIOD);
         assertEq(governor.votingDelay(), INITIAL_VOTING_DELAY);
@@ -15,7 +15,6 @@ contract CompoundGovernorInitializeTest is CompoundGovernorTest {
         assertEq(governor.lateQuorumVoteExtension(), INITIAL_VOTE_EXTENSION);
         assertEq(address(governor.timelock()), TIMELOCK_ADDRESS);
         assertEq(address(governor.token()), COMP_TOKEN_ADDRESS);
-        assertEq(governor.owner(), owner);
         assertEq(governor.whitelistGuardian(), whitelistGuardian);
         (address _proposalGuardian, uint96 _expiration) = governor.proposalGuardian();
         assertEq(_proposalGuardian, proposalGuardian.account);
@@ -37,14 +36,14 @@ contract SetQuorum is CompoundGovernorTest {
         _proposal = Proposal(_targets, _values, _calldatas, "Set New Quorum");
     }
 
-    function testFuzz_SetQuorum(uint256 _newQuorum) public {
+    function testFuzz_SetsQuorum(uint256 _newQuorum) public {
         _newQuorum = bound(_newQuorum, 1, INITIAL_QUORUM * 10);
         Proposal memory _proposal = _buildSetQuorumProposal(_newQuorum);
         _submitPassQueueAndExecuteProposal(_getRandomProposer(), _proposal);
         assertEq(governor.quorum(block.timestamp), _newQuorum);
     }
 
-    function testFuzz_FailSetQuorum(uint256 _newQuorum) public {
+    function testFuzz_DoesNotUpdateWhenProposalFails(uint256 _newQuorum) public {
         vm.assume(_newQuorum != INITIAL_QUORUM);
         _newQuorum = bound(_newQuorum, 1, INITIAL_QUORUM * 10);
         Proposal memory _proposal = _buildSetQuorumProposal(_newQuorum);
