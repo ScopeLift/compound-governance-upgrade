@@ -61,6 +61,155 @@ contract SetQuorum is CompoundGovernorTest {
     }
 }
 
+contract Propose is CompoundGovernorTest {
+    function test_ProposesAnEmptyProposal() public {
+        Proposal memory _proposal = _buildAnEmptyProposal();
+        address _proposer = _getRandomProposer();
+        uint256 _proposalId = _getProposalId(_proposal);
+
+        _submitProposal(_proposer, _proposal);
+        vm.assertEq(uint8(governor.state(_proposalId)), uint8(IGovernor.ProposalState.Active));
+    }
+
+    function test_EmitsProposalCreatedEvent() public {
+        Proposal memory _proposal = _buildAnEmptyProposal();
+        address _proposer = _getRandomProposer();
+        uint256 _proposalId = _getProposalId(_proposal);
+
+        vm.expectEmit();
+        emit IGovernor.ProposalCreated(
+            _proposalId,
+            _proposer,
+            _proposal.targets,
+            _proposal.values,
+            new string[](_proposal.targets.length),
+            _proposal.calldatas,
+            block.number + INITIAL_VOTING_DELAY,
+            block.number + INITIAL_VOTING_DELAY + INITIAL_VOTING_PERIOD,
+            _proposal.description
+        );
+        _submitProposal(_proposer, _proposal);
+    }
+}
+
+abstract contract Queue is CompoundGovernorTest {
+    function _queueWithProposalDetailsOrId(Proposal memory _proposal, uint256 _proposalId) internal virtual {}
+
+    function testFuzz_QueuesAnEmptyProposal(address _actor) public {
+        vm.assume(_actor != PROXY_ADMIN_ADDRESS);
+        Proposal memory _proposal = _buildAnEmptyProposal();
+        uint256 _proposalId = _submitAndPassProposal(_getRandomProposer(), _proposal);
+
+        vm.prank(_actor);
+        _queueWithProposalDetailsOrId(_proposal, _proposalId);
+        vm.assertEq(uint8(governor.state(_proposalId)), uint8(IGovernor.ProposalState.Queued));
+    }
+
+    function testFuzz_EmitsProposalQueuedEvent(address _actor) public {
+        vm.assume(_actor != PROXY_ADMIN_ADDRESS);
+        Proposal memory _proposal = _buildAnEmptyProposal();
+        uint256 _proposalId = _submitAndPassProposal(_getRandomProposer(), _proposal);
+
+        vm.expectEmit();
+        emit IGovernor.ProposalQueued(_proposalId, block.timestamp + timelock.delay());
+        vm.prank(_actor);
+        _queueWithProposalDetailsOrId(_proposal, _proposalId);
+    }
+
+    function testFuzz_RevertIf_ProposalIsPending(address _actor) public {
+        // TODO
+        revert();
+    }
+
+    function testFuzz_RevertIf_ProposalIsActive(address _actor) public {
+        vm.assume(_actor != PROXY_ADMIN_ADDRESS);
+        Proposal memory _proposal = _buildAnEmptyProposal();
+        uint256 _proposalId = _submitProposal(_getRandomProposer(), _proposal);
+
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IGovernor.GovernorUnexpectedProposalState.selector,
+                _proposalId,
+                IGovernor.ProposalState.Active,
+                _encodeStateBitmap(IGovernor.ProposalState.Succeeded)
+            )
+        );
+        vm.prank(_actor);
+        _queueWithProposalDetailsOrId(_proposal, _proposalId);
+    }
+
+    function testFuzz_RevertIf_ProposalIsDefeated(address _actor) public {
+        vm.assume(_actor != PROXY_ADMIN_ADDRESS);
+        Proposal memory _proposal = _buildAnEmptyProposal();
+        uint256 _proposalId = _submitAndFailProposal(_getRandomProposer(), _proposal);
+
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IGovernor.GovernorUnexpectedProposalState.selector,
+                _proposalId,
+                IGovernor.ProposalState.Defeated,
+                _encodeStateBitmap(IGovernor.ProposalState.Succeeded)
+            )
+        );
+        vm.prank(_actor);
+        _queueWithProposalDetailsOrId(_proposal, _proposalId);
+    }
+
+    function testFuzz_RevertIf_ProposalIsAlreadyQueued(address _actor) public {
+        vm.assume(_actor != PROXY_ADMIN_ADDRESS);
+        Proposal memory _proposal = _buildAnEmptyProposal();
+        uint256 _proposalId = _submitPassAndQueueProposal(_getRandomProposer(), _proposal);
+
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IGovernor.GovernorUnexpectedProposalState.selector,
+                _proposalId,
+                IGovernor.ProposalState.Queued,
+                _encodeStateBitmap(IGovernor.ProposalState.Succeeded)
+            )
+        );
+        vm.prank(_actor);
+        _queueWithProposalDetailsOrId(_proposal, _proposalId);
+    }
+
+    function testFuzz_RevertIf_ProposalIsExecuted(address _actor) public {
+        // TODO
+        revert();
+    }
+}
+
+contract QueueWithProposalId is Queue {
+    function _queueWithProposalDetailsOrId(Proposal memory, /* _proposal */ uint256 _proposalId) internal override {
+        governor.queue(_proposalId);
+    }
+}
+
+contract QueueWithProposalDetails is Queue {
+    function _queueWithProposalDetailsOrId(Proposal memory _proposal, uint256 /* _proposalId */ ) internal override {
+        governor.queue(
+            _proposal.targets, _proposal.values, _proposal.calldatas, keccak256(bytes(_proposal.description))
+        );
+    }
+}
+
+abstract contract Execute is CompoundGovernorTest {
+    function _executeWithProposalDetailsOrId(Proposal memory _proposal, uint256 _proposalId) internal virtual {}
+}
+
+contract ExecuteWithProposalDetails is Execute {
+    function _executeWithProposalDetailsOrId(Proposal memory _proposal, uint256 /* _proposalId */ ) internal override {
+        governor.execute(
+            _proposal.targets, _proposal.values, _proposal.calldatas, keccak256(bytes(_proposal.description))
+        );
+    }
+}
+
+contract ExecuteWithProposalId is Execute {
+    function _executeWithProposalDetailsOrId(Proposal memory, /* _proposal */ uint256 _proposalId) internal override {
+        governor.execute(_proposalId);
+    }
+}
+
 contract Cancel is CompoundGovernorTest {
     function _setWhitelistedProposer(address _proposer) private {
         vm.prank(whitelistGuardian);
