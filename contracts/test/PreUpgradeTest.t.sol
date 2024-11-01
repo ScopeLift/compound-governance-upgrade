@@ -3,8 +3,7 @@ pragma solidity 0.8.26;
 
 import {BravoToCompoundGovernorUpgradeTest} from "contracts/test/helpers/BravoToCompoundGovernorUpgradeTest.sol";
 
-/// 
-contract BravoToCompoundUpgradeBeforeDeployTest is BravoToCompoundGovernorUpgradeTest {
+contract PreUpgradeTest is BravoToCompoundGovernorUpgradeTest {
     function setUp() public virtual override {
         super.setUp();
     }
@@ -15,7 +14,8 @@ contract BravoToCompoundUpgradeBeforeDeployTest is BravoToCompoundGovernorUpgrad
     }
 
     function _shouldPassAndExecuteUpgradeProposal() internal pure override returns (bool) {
-        // returning false indicates the upgrade proposal should not be passed and executed before the inherited tests are run.
+        // returning false indicates the upgrade proposal should not be passed and executed before the inherited tests
+        // are run.
         return false;
     }
 }
