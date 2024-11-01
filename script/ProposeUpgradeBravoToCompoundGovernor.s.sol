@@ -35,7 +35,8 @@ contract ProposeUpgradeBravoToCompoundGovernor is Script, CompoundGovernorConsta
         _values[2] = 0;
         _signatures[2] = "__acceptAdmin()";
         _calldatas[2] = "";
-        
+
+        // TODO: Update the proposal description
         return GOVERNOR_BRAVO.propose(
             _targets, _values, _signatures, _calldatas, "Upgrade GovernorBravo to CompoundGovernor"
         );
