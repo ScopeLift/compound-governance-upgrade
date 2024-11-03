@@ -421,6 +421,11 @@ contract HasVoted is CompoundGovernorTest {
 
         assertEq(governor.hasVoted(_proposalId, _voter), _hasVotedBefore ? true : false);
     }
+
+    function testFuzz_ZeroReturnedIf_HasVoted_Called_With_Invalid_ProposalId(uint256 _invalidProposalId, address _voter) public view {
+        vm.assume(_invalidProposalId != 0);
+        assertFalse(governor.hasVoted(_invalidProposalId, _voter));
+    }
 }
 
 contract UsedVotes is CompoundGovernorTest {
@@ -450,6 +455,11 @@ contract UsedVotes is CompoundGovernorTest {
         governor.castVoteWithReasonAndParams(_proposalId, VOTE_TYPE_FRACTIONAL, "MyReason", _params);
 
         assertEq(governor.usedVotes(_proposalId, _delegate), _forVotes + _againstVotes + _abstainVotes);
+    }
+
+    function testFuzz_ZeroReturnedIf_UsedVotes_Called_With_Invalid_ProposalId(uint256 _invalidProposalId, address _voter) public view {
+        vm.assume(_invalidProposalId != 0);
+        assertEq(governor.usedVotes(_invalidProposalId, _voter), 0);
     }
 }
 
@@ -485,6 +495,26 @@ contract CastVoteWithReasonAndParams is CompoundGovernorTest {
         assertEq(_againstVotesCast, _againstVotes);
         assertEq(_forVotesCast, _forVotes);
         assertEq(_abstainVotesCast, _abstainVotes);
+    }
+
+    function testFuzz_RevertIf_CastVotesCalledWithInvalidProposalId(
+        uint256 _invalidProposalId,
+        uint256 _voterIndex,
+        uint256 _forVotes,
+        uint256 _againstVotes,
+        uint256 _abstainVotes
+    ) public {
+        _voterIndex = bound(_voterIndex, 0, _majorDelegates.length - 1);
+        address _delegate = _majorDelegates[_voterIndex];
+        uint256 _votes = governor.getVotes(_delegate, vm.getBlockNumber() - 1);
+        _forVotes = bound(_forVotes, 0, _votes);
+        _againstVotes = bound(_againstVotes, 0, _votes - _forVotes);
+        _abstainVotes = bound(_abstainVotes, 0, _votes - _forVotes - _againstVotes);
+
+        vm.prank(_delegate);
+        bytes memory _params = abi.encodePacked(uint128(_againstVotes), uint128(_forVotes), uint128(_abstainVotes));
+        vm.expectRevert(abi.encodeWithSelector(IGovernor.GovernorNonexistentProposal.selector, _invalidProposalId));
+        governor.castVoteWithReasonAndParams(_invalidProposalId, VOTE_TYPE_FRACTIONAL, "MyReason", _params);
     }
 
     function testFuzz_CastVotesTwiceViaFlexibleVoting(
