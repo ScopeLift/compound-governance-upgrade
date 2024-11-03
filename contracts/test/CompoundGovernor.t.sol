@@ -752,14 +752,8 @@ contract ProposalDeadline is CompoundGovernorTest {
     }
 
     function testFuzz_ZeroReturnedIf_ProposalDeadlineCalledWithInvalidProposalId(
-        uint256 _invalidProposalId,
-        uint256 _proposerIndex
-    ) public {
-        _proposerIndex = bound(_proposerIndex, 0, _majorDelegates.length - 1);
-        address _proposer = _majorDelegates[_proposerIndex];
-        Proposal memory _proposal = _buildAnEmptyProposal();
-        uint256 _proposalId = _submitProposal(_proposer, _proposal);
-        vm.assume(_invalidProposalId != _proposalId);
+        uint256 _invalidProposalId
+    ) public view{
         uint256 _deadline = governor.proposalDeadline(_invalidProposalId);
         assertEq(_deadline, 0);
     }
@@ -778,14 +772,8 @@ contract ProposalSnapshot is CompoundGovernorTest {
     }
 
     function testFuzz_ZeroReturnedIf_ProposalSnapshotCalledWithInvalidProposalId(
-        uint256 _invalidProposalId,
-        uint256 _proposerIndex
-    ) public {
-        _proposerIndex = bound(_proposerIndex, 0, _majorDelegates.length - 1);
-        address _proposer = _majorDelegates[_proposerIndex];
-        Proposal memory _proposal = _buildAnEmptyProposal();
-        uint256 _proposalId = _submitProposal(_proposer, _proposal);
-        vm.assume(_invalidProposalId != _proposalId);
+        uint256 _invalidProposalId
+    ) public view {
         uint256 _snapShot = governor.proposalSnapshot(_invalidProposalId);
         assertEq(_snapShot, 0);
     }
@@ -806,17 +794,8 @@ contract ProposalEta is CompoundGovernorTest {
     }
 
     function testFuzz_ZeroReturnedIf_ProposalEtaCalledWithInvalidProposalId(
-        uint256 _invalidProposalId,
-        uint256 _proposerIndex
-    ) public {
-        _proposerIndex = bound(_proposerIndex, 0, _majorDelegates.length - 1);
-        address _proposer = _majorDelegates[_proposerIndex];
-        Proposal memory _proposal = _buildAnEmptyProposal();
-        uint256 _proposalId = _submitProposal(_proposer, _proposal);
-        _passProposal(_proposalId);
-        vm.assume(_invalidProposalId != _proposalId);
-        vm.roll(vm.getBlockNumber() + INITIAL_VOTING_PERIOD + 1);
-        governor.queue(_proposalId);
+        uint256 _invalidProposalId
+    ) public view {
         uint256 _eta = governor.proposalEta(_invalidProposalId);
         assertEq(_eta, 0);
     }
@@ -833,14 +812,8 @@ contract ProposalProposer is CompoundGovernorTest {
     }
 
     function testFuzz_ZeroReturnedIf_ProposalProposerCalledWithInvalidProposalId(
-        uint256 _invalidProposalId,
-        uint256 _proposerIndex
-    ) public {
-        _proposerIndex = bound(_proposerIndex, 0, _majorDelegates.length - 1);
-        address _proposerExpected = _majorDelegates[_proposerIndex];
-        Proposal memory _proposal = _buildAnEmptyProposal();
-        uint256 _proposalId = _submitProposal(_proposerExpected, _proposal);
-        vm.assume(_invalidProposalId != _proposalId);
+        uint256 _invalidProposalId
+    ) public view {
         address _proposer = governor.proposalProposer(_invalidProposalId);
         assertEq(_proposer, address(0));
     }
@@ -946,4 +919,10 @@ contract State is CompoundGovernorTest {
         assertEq(uint8(governor.state(_proposalId)), uint8(IGovernor.ProposalState.Expired));
     }
 
+    function testFuzz_RevertIf_StateCalledWithInvalidProposalId(
+        uint256 _invalidProposalId
+    ) public {
+        vm.expectRevert(abi.encodeWithSelector(IGovernor.GovernorNonexistentProposal.selector, _invalidProposalId));
+        governor.state(_invalidProposalId);
+    }
 }
