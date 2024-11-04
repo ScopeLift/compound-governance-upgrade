@@ -93,7 +93,7 @@ contract Propose is CompoundGovernorTest {
 }
 
 abstract contract Queue is CompoundGovernorTest {
-    function _queueWithProposalDetailsOrId(Proposal memory _proposal, uint256 _proposalId) internal virtual {}
+    function _queueWithProposalDetailsOrId(Proposal memory _proposal, uint256 _proposalId) internal virtual;
 
     function testFuzz_QueuesAnEmptyProposal(address _actor) public {
         vm.assume(_actor != PROXY_ADMIN_ADDRESS);
@@ -217,7 +217,7 @@ contract QueueWithProposalDetails is Queue {
 }
 
 abstract contract Execute is CompoundGovernorTest {
-    function _executeWithProposalDetailsOrId(Proposal memory _proposal, uint256 _proposalId) internal virtual {}
+    function _executeWithProposalDetailsOrId(Proposal memory _proposal, uint256 _proposalId) internal virtual;
 
     function testFuzz_ExecutesAProposal(address _actor) public {
         vm.assume(_actor != PROXY_ADMIN_ADDRESS);
@@ -335,7 +335,7 @@ abstract contract Cancel is CompoundGovernorTest {
     bytes32 private constant ALL_PROPOSAL_STATES_BITMAP =
         bytes32((2 ** (uint8(type(IGovernor.ProposalState).max) + 1)) - 1);
 
-    function _cancelWithProposalDetailsOrId(Proposal memory _proposal, uint256 _proposalId) internal virtual {}
+    function _cancelWithProposalDetailsOrId(Proposal memory _proposal, uint256 _proposalId) internal virtual;
 
     function _setWhitelistedProposer(address _proposer) private {
         vm.prank(whitelistGuardian);
