@@ -422,7 +422,7 @@ contract HasVoted is CompoundGovernorTest {
         assertEq(governor.hasVoted(_proposalId, _voter), _hasVotedBefore ? true : false);
     }
 
-    function testFuzz_FalseReturnedIfHasVoted_Called_With_Invalid_ProposalId(uint256 _invalidProposalId, address _voter) public view {
+    function testFuzz_ReturnsFalseIfHasVoted_Called_With_Invalid_ProposalId(uint256 _invalidProposalId, address _voter) public view {
         vm.assume(_invalidProposalId != 0);
         assertFalse(governor.hasVoted(_invalidProposalId, _voter));
     }
@@ -457,7 +457,7 @@ contract UsedVotes is CompoundGovernorTest {
         assertEq(governor.usedVotes(_proposalId, _delegate), _forVotes + _againstVotes + _abstainVotes);
     }
 
-    function testFuzz_ZeroReturnedIfUsedVotes_Called_With_Invalid_ProposalId(uint256 _invalidProposalId, address _voter) public view {
+    function testFuzz_ReturnsZeroIfUsedVotes_Called_With_Invalid_ProposalId(uint256 _invalidProposalId, address _voter) public view {
         vm.assume(_invalidProposalId != 0);
         assertEq(governor.usedVotes(_invalidProposalId, _voter), 0);
     }
@@ -780,7 +780,7 @@ contract ProposalDeadline is CompoundGovernorTest {
         assertEq(_deadline, _clockAtSubmit + INITIAL_VOTING_DELAY + INITIAL_VOTING_PERIOD);
     }
 
-    function testFuzz_ZeroReturnedIfProposalDeadlineCalledWithInvalidProposalId(
+    function testFuzz_ReturnsZeroIfProposalDeadlineCalledWithInvalidProposalId(
         uint256 _invalidProposalId
     ) public view{
         uint256 _deadline = governor.proposalDeadline(_invalidProposalId);
@@ -799,7 +799,7 @@ contract ProposalSnapshot is CompoundGovernorTest {
         assertEq(_snapShot, _clockAtSubmit + INITIAL_VOTING_DELAY);
     }
 
-    function testFuzz_ZeroReturnedIfProposalSnapshotCalledWithInvalidProposalId(
+    function testFuzz_ReturnsZeroIfProposalSnapshotCalledWithInvalidProposalId(
         uint256 _invalidProposalId
     ) public view {
         uint256 _snapShot = governor.proposalSnapshot(_invalidProposalId);
@@ -820,7 +820,7 @@ contract ProposalEta is CompoundGovernorTest {
         assertEq(_eta, _timeOfQueue + timelock.delay());
     }
 
-    function testFuzz_ZeroReturnedIfProposalEtaCalledWithInvalidProposalId(
+    function testFuzz_ReturnsZeroIfProposalEtaCalledWithInvalidProposalId(
         uint256 _invalidProposalId
     ) public view {
         uint256 _eta = governor.proposalEta(_invalidProposalId);
@@ -837,7 +837,7 @@ contract ProposalProposer is CompoundGovernorTest {
         assertEq(_proposerExpected, _proposer);
     }
 
-    function testFuzz_ZeroReturnedIfProposalProposerCalledWithInvalidProposalId(
+    function testFuzz_ReturnsZeroIfProposalProposerCalledWithInvalidProposalId(
         uint256 _invalidProposalId
     ) public view {
         address _proposer = governor.proposalProposer(_invalidProposalId);
