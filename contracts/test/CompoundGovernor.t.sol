@@ -117,8 +117,20 @@ abstract contract Queue is CompoundGovernorTest {
     }
 
     function testFuzz_RevertIf_ProposalIsPending(address _actor) public {
-        // TODO
-        revert();
+        vm.assume(_actor != PROXY_ADMIN_ADDRESS);
+        Proposal memory _proposal = _buildAnEmptyProposal();
+        uint256 _proposalId = _submitProposalWithoutRoll(_getRandomProposer(), _proposal);
+
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IGovernor.GovernorUnexpectedProposalState.selector,
+                _proposalId,
+                IGovernor.ProposalState.Pending,
+                _encodeStateBitmap(IGovernor.ProposalState.Succeeded)
+            )
+        );
+        vm.prank(_actor);
+        _queueWithProposalDetailsOrId(_proposal, _proposalId);
     }
 
     function testFuzz_RevertIf_ProposalIsActive(address _actor) public {
@@ -173,8 +185,20 @@ abstract contract Queue is CompoundGovernorTest {
     }
 
     function testFuzz_RevertIf_ProposalIsExecuted(address _actor) public {
-        // TODO
-        revert();
+        vm.assume(_actor != PROXY_ADMIN_ADDRESS);
+        Proposal memory _proposal = _buildAnEmptyProposal();
+        uint256 _proposalId = _submitPassQueueAndExecuteProposal(_getRandomProposer(), _proposal);
+
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IGovernor.GovernorUnexpectedProposalState.selector,
+                _proposalId,
+                IGovernor.ProposalState.Executed,
+                _encodeStateBitmap(IGovernor.ProposalState.Succeeded)
+            )
+        );
+        vm.prank(_actor);
+        _queueWithProposalDetailsOrId(_proposal, _proposalId);
     }
 }
 
@@ -194,6 +218,103 @@ contract QueueWithProposalDetails is Queue {
 
 abstract contract Execute is CompoundGovernorTest {
     function _executeWithProposalDetailsOrId(Proposal memory _proposal, uint256 _proposalId) internal virtual {}
+
+    function testFuzz_ExecutesAProposal(address _actor) public {
+        vm.assume(_actor != PROXY_ADMIN_ADDRESS);
+        Proposal memory _proposal = _buildAnEmptyProposal();
+        uint256 _proposalId = _submitPassAndQueueProposal(_getRandomProposer(), _proposal);
+
+        vm.prank(_actor);
+        _executeWithProposalDetailsOrId(_proposal, _proposalId);
+        vm.assertEq(uint8(governor.state(_proposalId)), uint8(IGovernor.ProposalState.Executed));
+    }
+
+    function testFuzz_EmitsProposalExecutedEvent(address _actor) public {
+        vm.assume(_actor != PROXY_ADMIN_ADDRESS);
+        Proposal memory _proposal = _buildAnEmptyProposal();
+        uint256 _proposalId = _submitPassAndQueueProposal(_getRandomProposer(), _proposal);
+
+        vm.expectEmit();
+        emit IGovernor.ProposalExecuted(_proposalId);
+        vm.prank(_actor);
+        _executeWithProposalDetailsOrId(_proposal, _proposalId);
+    }
+
+    function testFuzz_RevertIf_ProposalIsPending(address _actor) public {
+        vm.assume(_actor != PROXY_ADMIN_ADDRESS);
+        Proposal memory _proposal = _buildAnEmptyProposal();
+        uint256 _proposalId = _submitProposalWithoutRoll(_getRandomProposer(), _proposal);
+
+        bytes32 _expectedBitMap =
+            _encodeStateBitmap(IGovernor.ProposalState.Queued) | _encodeStateBitmap(IGovernor.ProposalState.Succeeded);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IGovernor.GovernorUnexpectedProposalState.selector,
+                _proposalId,
+                IGovernor.ProposalState.Pending,
+                _expectedBitMap
+            )
+        );
+        vm.prank(_actor);
+        _executeWithProposalDetailsOrId(_proposal, _proposalId);
+    }
+
+    function testFuzz_RevertIf_ProposalIsActive(address _actor) public {
+        vm.assume(_actor != PROXY_ADMIN_ADDRESS);
+        Proposal memory _proposal = _buildAnEmptyProposal();
+        uint256 _proposalId = _submitProposal(_getRandomProposer(), _proposal);
+
+        bytes32 _expectedBitMap =
+            _encodeStateBitmap(IGovernor.ProposalState.Queued) | _encodeStateBitmap(IGovernor.ProposalState.Succeeded);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IGovernor.GovernorUnexpectedProposalState.selector,
+                _proposalId,
+                IGovernor.ProposalState.Active,
+                _expectedBitMap
+            )
+        );
+        vm.prank(_actor);
+        _executeWithProposalDetailsOrId(_proposal, _proposalId);
+    }
+
+    function testFuzz_RevertIf_ProposalIsDefeated(address _actor) public {
+        vm.assume(_actor != PROXY_ADMIN_ADDRESS);
+        Proposal memory _proposal = _buildAnEmptyProposal();
+        uint256 _proposalId = _submitAndFailProposal(_getRandomProposer(), _proposal);
+
+        bytes32 _expectedBitMap =
+            _encodeStateBitmap(IGovernor.ProposalState.Queued) | _encodeStateBitmap(IGovernor.ProposalState.Succeeded);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IGovernor.GovernorUnexpectedProposalState.selector,
+                _proposalId,
+                IGovernor.ProposalState.Defeated,
+                _expectedBitMap
+            )
+        );
+        vm.prank(_actor);
+        _executeWithProposalDetailsOrId(_proposal, _proposalId);
+    }
+
+    function testFuzz_RevertIf_ProposalIsExecuted(address _actor) public {
+        vm.assume(_actor != PROXY_ADMIN_ADDRESS);
+        Proposal memory _proposal = _buildAnEmptyProposal();
+        uint256 _proposalId = _submitPassQueueAndExecuteProposal(_getRandomProposer(), _proposal);
+
+        bytes32 _expectedBitMap =
+            _encodeStateBitmap(IGovernor.ProposalState.Queued) | _encodeStateBitmap(IGovernor.ProposalState.Succeeded);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IGovernor.GovernorUnexpectedProposalState.selector,
+                _proposalId,
+                IGovernor.ProposalState.Executed,
+                _expectedBitMap
+            )
+        );
+        vm.prank(_actor);
+        _executeWithProposalDetailsOrId(_proposal, _proposalId);
+    }
 }
 
 contract ExecuteWithProposalDetails is Execute {
@@ -210,7 +331,12 @@ contract ExecuteWithProposalId is Execute {
     }
 }
 
-contract Cancel is CompoundGovernorTest {
+abstract contract Cancel is CompoundGovernorTest {
+    bytes32 private constant ALL_PROPOSAL_STATES_BITMAP =
+        bytes32((2 ** (uint8(type(IGovernor.ProposalState).max) + 1)) - 1);
+
+    function _cancelWithProposalDetailsOrId(Proposal memory _proposal, uint256 _proposalId) internal virtual {}
+
     function _setWhitelistedProposer(address _proposer) private {
         vm.prank(whitelistGuardian);
         governor.setWhitelistAccountExpiration(_proposer, block.timestamp + 2_000_000);
@@ -224,53 +350,42 @@ contract Cancel is CompoundGovernorTest {
         );
     }
 
-    function testFuzz_ProposerCanCancelItsOwnProposal(uint256 _randomIndex) public {
-        _randomIndex = bound(_randomIndex, 0, _majorDelegates.length - 1);
-        address _proposer = _majorDelegates[_randomIndex];
+    function test_ProposerCanCancelItsOwnProposal() public {
+        address _proposer = _getRandomProposer();
         Proposal memory _proposal = _buildAnEmptyProposal();
         uint256 _proposalId = _getProposalId(_proposal);
         _submitPassAndQueueProposal(_proposer, _proposal);
 
         vm.prank(_proposer);
-        governor.cancel(
-            _proposal.targets, _proposal.values, _proposal.calldatas, keccak256(bytes(_proposal.description))
-        );
+        _cancelWithProposalDetailsOrId(_proposal, _proposalId);
         vm.assertEq(uint256(governor.state(_proposalId)), uint256(IGovernor.ProposalState.Canceled));
     }
 
-    function testFuzz_ProposalGuardianCanCancelAnyProposal(uint256 _randomIndex) public {
-        _randomIndex = bound(_randomIndex, 0, _majorDelegates.length - 1);
-        address _proposer = _majorDelegates[_randomIndex];
+    function test_ProposalGuardianCanCancelAnyProposal() public {
         Proposal memory _proposal = _buildAnEmptyProposal();
         uint256 _proposalId = _getProposalId(_proposal);
-        _submitPassAndQueueProposal(_proposer, _proposal);
+        _submitPassAndQueueProposal(_getRandomProposer(), _proposal);
 
         vm.prank(proposalGuardian.account);
-        governor.cancel(
-            _proposal.targets, _proposal.values, _proposal.calldatas, keccak256(bytes(_proposal.description))
-        );
+        _cancelWithProposalDetailsOrId(_proposal, _proposalId);
         vm.assertEq(uint256(governor.state(_proposalId)), uint256(IGovernor.ProposalState.Canceled));
     }
 
-    function testFuzz_AnyoneCanCancelAProposalBelowThreshold(address _caller, uint256 _randomIndex) public {
+    function testFuzz_AnyoneCanCancelAProposalBelowThreshold(address _caller) public {
         vm.assume(_caller != PROXY_ADMIN_ADDRESS);
-        _randomIndex = bound(_randomIndex, 0, _majorDelegates.length - 1);
-        address _proposer = _majorDelegates[_randomIndex];
+        address _proposer = _getRandomProposer();
         Proposal memory _proposal = _buildAnEmptyProposal();
         uint256 _proposalId = _getProposalId(_proposal);
         _submitPassAndQueueProposal(_proposer, _proposal);
         _removeDelegateeVotingWeight(_proposer);
 
         vm.prank(_caller);
-        governor.cancel(
-            _proposal.targets, _proposal.values, _proposal.calldatas, keccak256(bytes(_proposal.description))
-        );
+        _cancelWithProposalDetailsOrId(_proposal, _proposalId);
         vm.assertEq(uint256(governor.state(_proposalId)), uint256(IGovernor.ProposalState.Canceled));
     }
 
-    function testFuzz_WhitelistGuardianCanCancelWhitelistedProposalBelowThreshold(uint256 _randomIndex) public {
-        _randomIndex = bound(_randomIndex, 0, _majorDelegates.length - 1);
-        address _proposer = _majorDelegates[_randomIndex];
+    function test_WhitelistGuardianCanCancelWhitelistedProposalBelowThreshold() public {
+        address _proposer = _getRandomProposer();
         Proposal memory _proposal = _buildAnEmptyProposal();
         uint256 _proposalId = _getProposalId(_proposal);
         _setWhitelistedProposer(_proposer);
@@ -278,19 +393,15 @@ contract Cancel is CompoundGovernorTest {
         _removeDelegateeVotingWeight(_proposer);
 
         vm.prank(whitelistGuardian);
-        governor.cancel(
-            _proposal.targets, _proposal.values, _proposal.calldatas, keccak256(bytes(_proposal.description))
-        );
+        _cancelWithProposalDetailsOrId(_proposal, _proposalId);
         vm.assertEq(uint256(governor.state(_proposalId)), uint256(IGovernor.ProposalState.Canceled));
     }
 
-    function testFuzz_RevertIf_NonProposerOrGuardianCancelsProposalAboveThreshold(address _caller, uint256 _randomIndex)
-        public
-    {
-        _randomIndex = bound(_randomIndex, 0, _majorDelegates.length - 1);
-        address _proposer = _majorDelegates[_randomIndex];
+    function testFuzz_RevertIf_NonProposerOrGuardianCancelsProposalAboveThreshold(address _caller) public {
+        address _proposer = _getRandomProposer();
         vm.assume(_caller != proposalGuardian.account && _caller != _proposer && _caller != PROXY_ADMIN_ADDRESS);
         Proposal memory _proposal = _buildAnEmptyProposal();
+        uint256 _proposalId = _getProposalId(_proposal);
         _submitPassAndQueueProposal(_proposer, _proposal);
 
         vm.prank(_caller);
@@ -299,23 +410,18 @@ contract Cancel is CompoundGovernorTest {
                 CompoundGovernor.Unauthorized.selector, bytes32("Proposer above proposalThreshold"), _caller
             )
         );
-        governor.cancel(
-            _proposal.targets, _proposal.values, _proposal.calldatas, keccak256(bytes(_proposal.description))
-        );
+        _cancelWithProposalDetailsOrId(_proposal, _proposalId);
     }
 
-    function testFuzz_RevertIf_NonWhitelistGuardianCancelsWhitelistedProposalBelowThreshold(
-        address _caller,
-        uint256 _randomIndex
-    ) public {
-        _randomIndex = bound(_randomIndex, 0, _majorDelegates.length - 1);
-        address _proposer = _majorDelegates[_randomIndex];
+    function testFuzz_RevertIf_NonWhitelistGuardianCancelsWhitelistedProposalBelowThreshold(address _caller) public {
+        address _proposer = _getRandomProposer();
         vm.assume(
             _caller != whitelistGuardian && _caller != _proposer && _caller != proposalGuardian.account
                 && _caller != PROXY_ADMIN_ADDRESS
         );
 
         Proposal memory _proposal = _buildAnEmptyProposal();
+        uint256 _proposalId = _getProposalId(_proposal);
         _setWhitelistedProposer(_proposer);
         _submitPassAndQueueProposal(_proposer, _proposal);
         _removeDelegateeVotingWeight(_proposer);
@@ -324,19 +430,14 @@ contract Cancel is CompoundGovernorTest {
         vm.expectRevert(
             abi.encodeWithSelector(CompoundGovernor.Unauthorized.selector, bytes32("Not whitelistGuardian"), _caller)
         );
-        governor.cancel(
-            _proposal.targets, _proposal.values, _proposal.calldatas, keccak256(bytes(_proposal.description))
-        );
+        _cancelWithProposalDetailsOrId(_proposal, _proposalId);
     }
 
-    function testFuzz_RevertIf_NonProposerOrGuardianCancelsWhitelistedProposalAboveThreshold(
-        address _caller,
-        uint256 _randomIndex
-    ) public {
-        _randomIndex = bound(_randomIndex, 0, _majorDelegates.length - 1);
-        address _proposer = _majorDelegates[_randomIndex];
+    function testFuzz_RevertIf_NonProposerOrGuardianCancelsWhitelistedProposalAboveThreshold(address _caller) public {
+        address _proposer = _getRandomProposer();
         vm.assume(_caller != _proposer && _caller != proposalGuardian.account && _caller != PROXY_ADMIN_ADDRESS);
         Proposal memory _proposal = _buildAnEmptyProposal();
+        uint256 _proposalId = _getProposalId(_proposal);
         vm.prank(whitelistGuardian);
         governor.setWhitelistAccountExpiration(_proposer, block.timestamp + 2_000_000);
         vm.assertTrue(governor.isWhitelisted(_proposer));
@@ -349,9 +450,40 @@ contract Cancel is CompoundGovernorTest {
                 CompoundGovernor.Unauthorized.selector, bytes32("Proposer above proposalThreshold"), _caller
             )
         );
+        _cancelWithProposalDetailsOrId(_proposal, _proposalId);
+    }
+
+    function testFuzz_RevertIf_ProposalIsExecuted(address _actor) public {
+        vm.assume(_actor != PROXY_ADMIN_ADDRESS);
+        Proposal memory _proposal = _buildAnEmptyProposal();
+        uint256 _proposalId = _submitPassQueueAndExecuteProposal(_getRandomProposer(), _proposal);
+
+        bytes32 _expectedBitMap = ALL_PROPOSAL_STATES_BITMAP ^ _encodeStateBitmap(IGovernor.ProposalState.Canceled)
+            ^ _encodeStateBitmap(IGovernor.ProposalState.Expired) ^ _encodeStateBitmap(IGovernor.ProposalState.Executed);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IGovernor.GovernorUnexpectedProposalState.selector,
+                _proposalId,
+                IGovernor.ProposalState.Executed,
+                _expectedBitMap
+            )
+        );
+        vm.prank(proposalGuardian.account);
+        _cancelWithProposalDetailsOrId(_proposal, _proposalId);
+    }
+}
+
+contract CancelWithProposalDetails is Cancel {
+    function _cancelWithProposalDetailsOrId(Proposal memory _proposal, uint256 /* _proposalId */ ) internal override {
         governor.cancel(
             _proposal.targets, _proposal.values, _proposal.calldatas, keccak256(bytes(_proposal.description))
         );
+    }
+}
+
+contract CancelWithProposalId is Cancel {
+    function _cancelWithProposalDetailsOrId(Proposal memory, /* _proposal */ uint256 _proposalId) internal override {
+        governor.cancel(_proposalId);
     }
 }
 

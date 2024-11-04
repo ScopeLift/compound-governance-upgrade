@@ -123,6 +123,14 @@ contract CompoundGovernorTest is Test, CompoundGovernorConstants {
         vm.roll(vm.getBlockNumber() + INITIAL_VOTING_DELAY + 1);
     }
 
+    function _submitProposalWithoutRoll(address _proposer, Proposal memory _proposal)
+        public
+        returns (uint256 _proposalId)
+    {
+        vm.prank(_proposer);
+        _proposalId = governor.propose(_proposal.targets, _proposal.values, _proposal.calldatas, _proposal.description);
+    }
+
     function _passProposal(uint256 _proposalId) public {
         for (uint256 _index = 0; _index < _majorDelegates.length; _index++) {
             vm.prank(_majorDelegates[_index]);
