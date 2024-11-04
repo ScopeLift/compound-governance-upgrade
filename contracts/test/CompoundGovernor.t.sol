@@ -497,7 +497,7 @@ contract CastVoteWithReasonAndParams is CompoundGovernorTest {
         assertEq(_abstainVotesCast, _abstainVotes);
     }
 
-    function testFuzz_RevertIf_CastVotesCalledWithInvalidProposalId(
+    function testFuzz_RevertIf_CastVotesCalledWithNonExistentProposalId(
         uint256 _invalidProposalId,
         uint256 _voterIndex,
         uint256 _forVotes,
@@ -845,7 +845,7 @@ contract ProposalProposer is CompoundGovernorTest {
     }
 }
 
-contract ProposalNeedsQueing is CompoundGovernorTest {
+contract ProposalNeedsQueueing is CompoundGovernorTest {
     function testFuzz_ProposalNeedsQueuingCorrectWithEnumeratedId(uint256) public {
         address _proposerExpected = _getRandomProposer();
         Proposal memory _proposal = _buildAnEmptyProposal();
