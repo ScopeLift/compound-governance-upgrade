@@ -856,9 +856,24 @@ contract ProposalNeedsQueueing is CompoundGovernorTest {
 }
 
 contract ProposalThreshold is CompoundGovernorTest {
-    function test_ProposalThreshold() public view {
-        assertEq(governor.proposalThreshold(), INITIAL_PROPOSAL_THRESHOLD);
+    function _buildSetProposalThreshold(uint256 _amount) private view returns (Proposal memory _proposal) {
+        address[] memory _targets = new address[](1);
+        _targets[0] = address(governor);
+
+        uint256[] memory _values = new uint256[](1);
+        _values[0] = 0;
+
+        bytes[] memory _calldatas = new bytes[](1);
+        _calldatas[0] = _buildProposalData("setProposalThreshold(uint256)", abi.encode(_amount));
+
+        _proposal = Proposal(_targets, _values, _calldatas, "Set New Threshold");
     }
+
+    function test_ProposalThreshold(uint256 _newThreshold) public {
+        assertEq(governor.proposalThreshold(), INITIAL_PROPOSAL_THRESHOLD);
+        Proposal memory _proposal = _buildSetProposalThreshold(_newThreshold);
+        _submitPassQueueAndExecuteProposal(_getRandomProposer(), _proposal);
+        assertEq(governor.proposalThreshold(), _newThreshold);}
 }
 
 contract State is CompoundGovernorTest {
