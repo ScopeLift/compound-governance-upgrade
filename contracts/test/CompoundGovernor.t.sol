@@ -771,9 +771,8 @@ contract CastVoteWithReasonAndParams is CompoundGovernorTest {
 }
 
 contract ProposalDeadline is CompoundGovernorTest {
-    function testFuzz_ProposalDeadlineCorrectWithEnumeratedId(uint256 _proposerIndex) public {
-        _proposerIndex = bound(_proposerIndex, 0, _majorDelegates.length - 1);
-        address _proposer = _majorDelegates[_proposerIndex];
+    function testFuzz_ProposalDeadlineCorrectWithEnumeratedId(uint256) public {
+        address _proposer = _getRandomProposer();
         uint256 _clockAtSubmit = governor.clock();
         Proposal memory _proposal = _buildAnEmptyProposal();
         uint256 _proposalId = _submitProposal(_proposer, _proposal);
@@ -791,9 +790,8 @@ contract ProposalDeadline is CompoundGovernorTest {
         
 
 contract ProposalSnapshot is CompoundGovernorTest {
-    function testFuzz_ProposalSnapshotCorrectWithEnumeratedId(uint256 _proposerIndex) public {
-        _proposerIndex = bound(_proposerIndex, 0, _majorDelegates.length - 1);
-        address _proposer = _majorDelegates[_proposerIndex];
+    function testFuzz_ProposalSnapshotCorrectWithEnumeratedId(uint256) public {
+        address _proposer = _getRandomProposer();
         uint256 _clockAtSubmit = governor.clock();
         Proposal memory _proposal = _buildAnEmptyProposal();
         uint256 _proposalId = _submitProposal(_proposer, _proposal);
@@ -810,9 +808,8 @@ contract ProposalSnapshot is CompoundGovernorTest {
 }
 
 contract ProposalEta is CompoundGovernorTest {
-    function testFuzz_ProposalEtaCorrectWithEnumeratedId(uint256 _proposerIndex) public {
-        _proposerIndex = bound(_proposerIndex, 0, _majorDelegates.length - 1);
-        address _proposer = _majorDelegates[_proposerIndex];
+    function testFuzz_ProposalEtaCorrectWithEnumeratedId(uint256) public {
+        address _proposer = _getRandomProposer();
         Proposal memory _proposal = _buildAnEmptyProposal();
         uint256 _proposalId = _submitProposal(_proposer, _proposal);
         _passProposal(_proposalId);
@@ -832,9 +829,8 @@ contract ProposalEta is CompoundGovernorTest {
 }
 
 contract ProposalProposer is CompoundGovernorTest {
-    function testFuzz_ProposalProposerCorrectWithEnumeratedId(uint256 _proposerIndex) public {
-        _proposerIndex = bound(_proposerIndex, 0, _majorDelegates.length - 1);
-        address _proposerExpected = _majorDelegates[_proposerIndex];
+    function testFuzz_ProposalProposerCorrectWithEnumeratedId(uint256) public {
+        address _proposerExpected = _getRandomProposer();
         Proposal memory _proposal = _buildAnEmptyProposal();
         uint256 _proposalId = _submitProposal(_proposerExpected, _proposal);
         address _proposer = governor.proposalProposer(_proposalId);
@@ -850,9 +846,8 @@ contract ProposalProposer is CompoundGovernorTest {
 }
 
 contract ProposalNeedsQueing is CompoundGovernorTest {
-    function testFuzz_ProposalNeedsQueuingCorrectWithEnumeratedId(uint256 _proposerIndex) public {
-        _proposerIndex = bound(_proposerIndex, 0, _majorDelegates.length - 1);
-        address _proposerExpected = _majorDelegates[_proposerIndex];
+    function testFuzz_ProposalNeedsQueuingCorrectWithEnumeratedId(uint256) public {
+        address _proposerExpected = _getRandomProposer();
         Proposal memory _proposal = _buildAnEmptyProposal();
         uint256 _proposalId = _submitProposal(_proposerExpected, _proposal);
         bool _queuingNeeded = governor.proposalNeedsQueuing(_proposalId);
@@ -867,9 +862,8 @@ contract ProposalThreshold is CompoundGovernorTest {
 }
 
 contract State is CompoundGovernorTest {
-    function testFuzz_ReturnsCorrectStateWhenPending(uint256 _proposerIndex) public {
-        _proposerIndex = bound(_proposerIndex, 0, _majorDelegates.length - 1);
-        address _proposer = _majorDelegates[_proposerIndex];
+    function testFuzz_ReturnsCorrectStateWhenPending(uint256) public {
+        address _proposer = _getRandomProposer();
         Proposal memory _proposal = _buildAnEmptyProposal();
         vm.prank(_proposer);
         uint256 _proposalId = governor.propose(
@@ -878,17 +872,15 @@ contract State is CompoundGovernorTest {
         assertEq(uint8(governor.state(_proposalId)), uint8(IGovernor.ProposalState.Pending));
     }
 
-    function testFuzz_ReturnsCorrectStateWhenActive(uint256 _proposerIndex) public {
-        _proposerIndex = bound(_proposerIndex, 0, _majorDelegates.length - 1);
-        address _proposer = _majorDelegates[_proposerIndex];
+    function testFuzz_ReturnsCorrectStateWhenActive(uint256) public {
+        address _proposer = _getRandomProposer();
         Proposal memory _proposal = _buildAnEmptyProposal();
         uint256 _proposalId = _submitProposal(_proposer, _proposal);
         assertEq(uint8(governor.state(_proposalId)), uint8(IGovernor.ProposalState.Active));
     }
 
-    function testFuzz_ReturnsCorrectStateWhenCanceled(uint256 _proposerIndex) public {
-        _proposerIndex = bound(_proposerIndex, 0, _majorDelegates.length - 1);
-        address _proposer = _majorDelegates[_proposerIndex];
+    function testFuzz_ReturnsCorrectStateWhenCanceled(uint256) public {
+        address _proposer = _getRandomProposer();
         Proposal memory _proposal = _buildAnEmptyProposal();
         vm.prank(_proposer);
         uint256 _proposalId = governor.propose(
@@ -899,9 +891,8 @@ contract State is CompoundGovernorTest {
         assertEq(uint8(governor.state(_proposalId)), uint8(IGovernor.ProposalState.Canceled));
     }
 
-    function testFuzz_ReturnsCorrectStateWhenSucceeded(uint256 _proposerIndex) public {
-        _proposerIndex = bound(_proposerIndex, 0, _majorDelegates.length - 1);
-        address _proposer = _majorDelegates[_proposerIndex];
+    function testFuzz_ReturnsCorrectStateWhenSucceeded(uint256) public {
+        address _proposer = _getRandomProposer();
         Proposal memory _proposal = _buildAnEmptyProposal();
         uint256 _proposalId = _submitProposal(_proposer, _proposal);
         _passProposal(_proposalId);
@@ -909,9 +900,8 @@ contract State is CompoundGovernorTest {
         assertEq(uint8(governor.state(_proposalId)), uint8(IGovernor.ProposalState.Succeeded));
     }
 
-    function testFuzz_ReturnsCorrectStateWhenDefeated(uint256 _proposerIndex) public {
-        _proposerIndex = bound(_proposerIndex, 0, _majorDelegates.length - 1);
-        address _proposer = _majorDelegates[_proposerIndex];
+    function testFuzz_ReturnsCorrectStateWhenDefeated(uint256) public {
+        address _proposer = _getRandomProposer();
         Proposal memory _proposal = _buildAnEmptyProposal();
         uint256 _proposalId = _submitProposal(_proposer, _proposal);
         _failProposal(_proposalId);
@@ -919,9 +909,8 @@ contract State is CompoundGovernorTest {
         assertEq(uint8(governor.state(_proposalId)), uint8(IGovernor.ProposalState.Defeated));
     }
 
-    function testFuzz_ReturnsCorrectStateWhenQueued(uint256 _proposerIndex) public {
-        _proposerIndex = bound(_proposerIndex, 0, _majorDelegates.length - 1);
-        address _proposer = _majorDelegates[_proposerIndex];
+    function testFuzz_ReturnsCorrectStateWhenQueued(uint256) public {
+        address _proposer = _getRandomProposer();
         Proposal memory _proposal = _buildAnEmptyProposal();
         uint256 _proposalId = _submitProposal(_proposer, _proposal);
         _passAndQueueProposal(_proposal, _proposalId);
@@ -929,9 +918,8 @@ contract State is CompoundGovernorTest {
         assertEq(uint8(governor.state(_proposalId)), uint8(IGovernor.ProposalState.Queued));
     }
 
-    function testFuzz_ReturnsCorrectStateWhenExecuted(uint256 _proposerIndex) public {
-        _proposerIndex = bound(_proposerIndex, 0, _majorDelegates.length - 1);
-        address _proposer = _majorDelegates[_proposerIndex];
+    function testFuzz_ReturnsCorrectStateWhenExecuted(uint256) public {
+        address _proposer = _getRandomProposer();
         Proposal memory _proposal = _buildAnEmptyProposal();
         uint256 _proposalId = _submitProposal(_proposer, _proposal);
         _passQueueAndExecuteProposal(_proposal, _proposalId);
@@ -939,9 +927,8 @@ contract State is CompoundGovernorTest {
         assertEq(uint8(governor.state(_proposalId)), uint8(IGovernor.ProposalState.Executed));
     }
 
-    function testFuzz_ReturnsCorrectStateWhenExpired(uint256 _proposerIndex) public {
-        _proposerIndex = bound(_proposerIndex, 0, _majorDelegates.length - 1);
-        address _proposer = _majorDelegates[_proposerIndex];
+    function testFuzz_ReturnsCorrectStateWhenExpired(uint256) public {
+        address _proposer = _getRandomProposer();
         Proposal memory _proposal = _buildAnEmptyProposal();
         uint256 _proposalId = _submitProposal(_proposer, _proposal);
         _passAndQueueProposal(_proposal, _proposalId);
