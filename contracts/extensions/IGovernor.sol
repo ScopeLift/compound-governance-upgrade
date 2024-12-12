@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 // Sourced from contract below, with change to hashProposal (removed pure) for sequential proposal ID support.
-// OpenZeppelin Contracts (last updated v5.1.0-rc.0) (governance/IGovernor.sol)
+// OpenZeppelin Contracts (last updated v5.1.0) (governance/IGovernor.sol)
 
 pragma solidity ^0.8.20;
 
@@ -157,12 +157,7 @@ interface IGovernor is IERC165, IERC6372 {
      * `params` are additional encoded parameters. Their interpretation  also depends on the voting module used.
      */
     event VoteCastWithParams(
-        address indexed voter,
-        uint256 proposalId,
-        uint8 support,
-        uint256 weight,
-        string reason,
-        bytes params
+        address indexed voter, uint256 proposalId, uint8 support, uint256 weight, string reason, bytes params
     );
 
     /**
@@ -180,7 +175,8 @@ interface IGovernor is IERC165, IERC6372 {
     /**
      * @notice module:voting
      * @dev A description of the possible `support` values for {castVote} and the way these votes are counted, meant to
-     * be consumed by UIs to show correct vote options and interpret the results. The string is a URL-encoded sequence of
+     * be consumed by UIs to show correct vote options and interpret the results. The string is a URL-encoded sequence
+     * of
      * key-value pairs that each describe one aspect, for example `support=bravo&quorum=for,abstain`.
      *
      * There are 2 standard keys: `support` and `quorum`.
@@ -309,11 +305,10 @@ interface IGovernor is IERC165, IERC6372 {
      * @notice module:reputation
      * @dev Voting power of an `account` at a specific `timepoint` given additional encoded parameters.
      */
-    function getVotesWithParams(
-        address account,
-        uint256 timepoint,
-        bytes memory params
-    ) external view returns (uint256);
+    function getVotesWithParams(address account, uint256 timepoint, bytes memory params)
+        external
+        view
+        returns (uint256);
 
     /**
      * @notice module:voting
@@ -347,12 +342,9 @@ interface IGovernor is IERC165, IERC6372 {
      *
      * Emits a {ProposalQueued} event.
      */
-    function queue(
-        address[] memory targets,
-        uint256[] memory values,
-        bytes[] memory calldatas,
-        bytes32 descriptionHash
-    ) external returns (uint256 proposalId);
+    function queue(address[] memory targets, uint256[] memory values, bytes[] memory calldatas, bytes32 descriptionHash)
+        external
+        returns (uint256 proposalId);
 
     /**
      * @dev Execute a successful proposal. This requires the quorum to be reached, the vote to be successful, and the
@@ -395,35 +387,27 @@ interface IGovernor is IERC165, IERC6372 {
      *
      * Emits a {VoteCast} event.
      */
-    function castVoteWithReason(
-        uint256 proposalId,
-        uint8 support,
-        string calldata reason
-    ) external returns (uint256 balance);
+    function castVoteWithReason(uint256 proposalId, uint8 support, string calldata reason)
+        external
+        returns (uint256 balance);
 
     /**
      * @dev Cast a vote with a reason and additional encoded parameters
      *
      * Emits a {VoteCast} or {VoteCastWithParams} event depending on the length of params.
      */
-    function castVoteWithReasonAndParams(
-        uint256 proposalId,
-        uint8 support,
-        string calldata reason,
-        bytes memory params
-    ) external returns (uint256 balance);
+    function castVoteWithReasonAndParams(uint256 proposalId, uint8 support, string calldata reason, bytes memory params)
+        external
+        returns (uint256 balance);
 
     /**
      * @dev Cast a vote using the voter's signature, including ERC-1271 signature support.
      *
      * Emits a {VoteCast} event.
      */
-    function castVoteBySig(
-        uint256 proposalId,
-        uint8 support,
-        address voter,
-        bytes memory signature
-    ) external returns (uint256 balance);
+    function castVoteBySig(uint256 proposalId, uint8 support, address voter, bytes memory signature)
+        external
+        returns (uint256 balance);
 
     /**
      * @dev Cast a vote with a reason and additional encoded parameters using the voter's signature,
