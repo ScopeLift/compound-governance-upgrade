@@ -124,7 +124,7 @@ contract CompoundGovernor is
         if (_executor() != _msgSender()) {
             revert GovernorOnlyExecutor(_msgSender());
         }
-        _setNextProposalId(compoundGovernorBravo.proposalCount());
+        _setNextProposalId(compoundGovernorBravo.proposalCount() + 1);
     }
 
     /// @notice A modified `hashProposal` that supports sequential proposal IDs.
