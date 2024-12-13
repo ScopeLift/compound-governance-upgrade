@@ -363,12 +363,12 @@ contract CompoundGovernor is
 
     /// @inheritdoc GovernorCountingFractionalUpgradeable
     // solhint-disable-next-line func-name-mixedcase
-    function COUNTING_MODE() public pure virtual override(IGovernor, GovernorCountingFractionalUpgradeable) returns (string memory) {
+    function COUNTING_MODE() public pure override(IGovernor, GovernorCountingFractionalUpgradeable) returns (string memory) {
         return "support=bravo,fractional&quorum=for&params=fractional";
     }
 
-    /// @inheritdoc GovernorUpgradeable
-    /// @dev We override this function to resolve ambiguity between inherited contracts.
+    /// @notice Internal function that returns true if the amount of 'for' votes already cast meets the quorum limit, false otherwise.
+    /// @dev We override this function to implement quorum functionality that only includes votes in favor.
     function _quorumReached(uint256 proposalId) internal view override(GovernorUpgradeable, GovernorCountingFractionalUpgradeable) returns (bool) {
         (, uint256 _forVotes, ) = GovernorCountingFractionalUpgradeable.proposalVotes(proposalId);
         return quorum(proposalSnapshot(proposalId)) <= _forVotes;
