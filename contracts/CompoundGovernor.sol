@@ -135,6 +135,24 @@ contract CompoundGovernor is
         return GovernorSequentialProposalIdUpgradeable.hashProposal(_targets, _values, _calldatas, _descriptionHash);
     }
 
+    function propose(
+        address[] memory targets,
+        uint256[] memory values,
+        bytes[] memory calldatas,
+        string memory description
+    ) public override(GovernorUpgradeable) returns (uint256) {
+        address proposer = _msgSender();
+        if (isWhitelisted(proposer)) {
+            // check description restriction
+            if (!_isValidDescriptionForProposer(proposer, description)) {
+                revert GovernorRestrictedProposer(proposer);
+            }
+            return _propose(targets, values, calldatas, description, proposer);
+        } else {
+            return GovernorUpgradeable.propose(targets, values, calldatas, description);
+        }
+    }
+
     function _propose(
         address[] memory targets,
         uint256[] memory values,
