@@ -31,7 +31,8 @@ abstract contract GovernorSequentialProposalIdUpgradeable is GovernorUpgradeable
         mapping(uint256 proposalId => ProposalDetails) _proposalDetails;
     }
 
-    // keccak256(abi.encode(uint256(keccak256("storage.GovernorSequentialProposalIdStorage")) - 1)) & ~bytes32(uint256(0xff))
+    // keccak256(abi.encode(uint256(keccak256("storage.GovernorSequentialProposalIdStorage")) - 1)) &
+    // ~bytes32(uint256(0xff))
     bytes32 private constant GovernorSequentialProposalIdStorageLocation =
         0xa6952339bc887ea688c6b8e8399bb953a5002ee79177d6322fca98dc89ae0b00;
 
