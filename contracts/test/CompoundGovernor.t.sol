@@ -496,6 +496,22 @@ abstract contract Cancel is CompoundGovernorTest {
         _cancelWithProposalDetailsOrId(_proposal, _proposalId);
     }
 
+    function testFuzz_RevertIf_ExpiredProposalGuardianCancelsProposal(uint256 _timeElapsedSinceExpiry) public {
+        _timeElapsedSinceExpiry = bound(_timeElapsedSinceExpiry, 1, type(uint96).max);
+        Proposal memory _proposal = _buildAnEmptyProposal();
+        uint256 _proposalId = _getProposalId(_proposal);
+        _submitPassAndQueueProposal(_getRandomProposer(), _proposal);
+
+        vm.warp(proposalGuardian.expiration + _timeElapsedSinceExpiry);
+        vm.prank(proposalGuardian.account);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                CompoundGovernor.Unauthorized.selector, bytes32("ProposalGuardian expired"), proposalGuardian.account
+            )
+        );
+        _cancelWithProposalDetailsOrId(_proposal, _proposalId);
+    }
+
     function testFuzz_RevertIf_ProposalIsExecuted(address _actor) public {
         vm.assume(_actor != PROXY_ADMIN_ADDRESS);
         Proposal memory _proposal = _buildAnEmptyProposal();

@@ -218,6 +218,8 @@ contract CompoundGovernor is
             if (isWhitelisted(_proposer) && msg.sender != whitelistGuardian) {
                 revert Unauthorized("Not whitelistGuardian", msg.sender);
             }
+        } else if (msg.sender == proposalGuardian.account && block.timestamp > proposalGuardian.expiration) {
+            revert Unauthorized("ProposalGuardian expired", msg.sender);
         }
 
         return _cancel(_targets, _values, _calldatas, _descriptionHash);
