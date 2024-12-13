@@ -2,6 +2,7 @@
 pragma solidity 0.8.26;
 
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import {IGovernor} from "contracts/extensions/IGovernor.sol";
 import {GovernorUpgradeable} from "contracts/extensions/GovernorUpgradeable.sol";
 import {GovernorSequentialProposalIdUpgradeable} from "contracts/extensions/GovernorSequentialProposalIdUpgradeable.sol";
 import {GovernorVotesCompUpgradeable} from "contracts/extensions/GovernorVotesCompUpgradeable.sol";
@@ -358,5 +359,18 @@ contract CompoundGovernor is
         returns (ProposalState)
     {
         return GovernorTimelockCompoundUpgradeable.state(_proposalId);
+    }
+
+    /// @inheritdoc GovernorCountingFractionalUpgradeable
+    // solhint-disable-next-line func-name-mixedcase
+    function COUNTING_MODE() public pure virtual override(IGovernor, GovernorCountingFractionalUpgradeable) returns (string memory) {
+        return "support=bravo,fractional&quorum=for&params=fractional";
+    }
+
+    /// @inheritdoc GovernorUpgradeable
+    /// @dev We override this function to resolve ambiguity between inherited contracts.
+    function _quorumReached(uint256 proposalId) internal view override(GovernorUpgradeable, GovernorCountingFractionalUpgradeable) returns (bool) {
+        (, uint256 _forVotes, ) = GovernorCountingFractionalUpgradeable.proposalVotes(proposalId);
+        return quorum(proposalSnapshot(proposalId)) <= _forVotes;
     }
 }
