@@ -142,14 +142,23 @@ contract CompoundGovernor is
         string memory description
     ) public override(GovernorUpgradeable) returns (uint256) {
         address proposer = _msgSender();
-        if (isWhitelisted(proposer)) {
-            // check description restriction
-            if (!_isValidDescriptionForProposer(proposer, description)) {
-                revert GovernorRestrictedProposer(proposer);
+
+        // check description restriction
+        if (!_isValidDescriptionForProposer(proposer, description)) {
+            revert GovernorRestrictedProposer(proposer);
+        }
+        if (!isWhitelisted(proposer)) {
+            // check proposal threshold
+            uint256 votesThreshold = proposalThreshold();
+            if (votesThreshold > 0) {
+                uint256 proposerVotes = getVotes(proposer, clock() - 1);
+                if (proposerVotes < votesThreshold) {
+                    revert GovernorInsufficientProposerVotes(proposer, proposerVotes, votesThreshold);
+                }
             }
             return _propose(targets, values, calldatas, description, proposer);
         } else {
-            return GovernorUpgradeable.propose(targets, values, calldatas, description);
+            return _propose(targets, values, calldatas, description, proposer);
         }
     }
 
