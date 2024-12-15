@@ -147,6 +147,7 @@ contract CompoundGovernor is
         if (!_isValidDescriptionForProposer(proposer, description)) {
             revert GovernorRestrictedProposer(proposer);
         }
+
         if (!isWhitelisted(proposer)) {
             // check proposal threshold
             uint256 votesThreshold = proposalThreshold();
