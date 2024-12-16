@@ -74,7 +74,7 @@ contract Propose is CompoundGovernorTest {
         vm.assertEq(uint8(governor.state(_proposalId)), uint8(IGovernor.ProposalState.Active));
     }
 
-    function test_AWhitelistedAccountCanProposeWhileBelowThreshold(address _proposer) public {
+    function testFuzz_WhitelistedAccountCanProposeBelowThreshold(address _proposer) public {
         Proposal memory _proposal = _buildAnEmptyProposal();
         _setWhitelistedProposer(_proposer);
         uint256 _proposalId = _getProposalId(_proposal);
@@ -103,8 +103,29 @@ contract Propose is CompoundGovernorTest {
         _submitProposal(_proposer, _proposal);
     }
 
-    function test_RevertIf_ProposerIsBelowThreshold(address _proposer) public {
+    function testFuzz_RevertIf_NonWhitelistedProposerIsBelowThreshold(address _proposer) public {
         vm.assume(governor.getVotes(_proposer, vm.getBlockNumber() - 1) < governor.proposalThreshold());
+        Proposal memory _proposal = _buildAnEmptyProposal();
+
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IGovernor.GovernorInsufficientProposerVotes.selector,
+                _proposer,
+                governor.getVotes(_proposer, vm.getBlockNumber() - 1),
+                governor.proposalThreshold()
+            )
+        );
+        _submitProposal(_proposer, _proposal);
+    }
+
+    function testFuzz_RevertIf_ExpiredWhitelistedAccountIsBelowThreshold(
+        address _proposer,
+        uint256 _timeElapsedAfterAccountExpiry
+    ) public {
+        _timeElapsedAfterAccountExpiry = bound(_timeElapsedAfterAccountExpiry, 0, type(uint96).max);
+        vm.assume(governor.getVotes(_proposer, vm.getBlockNumber() - 1) < governor.proposalThreshold());
+        _setWhitelistedProposer(_proposer);
+        vm.warp(governor.whitelistAccountExpirations(_proposer) + _timeElapsedAfterAccountExpiry);
         Proposal memory _proposal = _buildAnEmptyProposal();
 
         vm.expectRevert(
