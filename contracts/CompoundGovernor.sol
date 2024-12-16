@@ -164,10 +164,9 @@ contract CompoundGovernor is
                     revert GovernorInsufficientProposerVotes(_proposer, _proposerVotes, _votesThreshold);
                 }
             }
-            return _propose(_targets, _values, _calldatas, _description, _proposer);
-        } else {
-            return _propose(_targets, _values, _calldatas, _description, _proposer);
         }
+
+        return _propose(_targets, _values, _calldatas, _description, _proposer);
     }
 
     /// @notice Internal function used to create a new proposal.
