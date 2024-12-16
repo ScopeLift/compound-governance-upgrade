@@ -213,7 +213,7 @@ contract CompoundGovernor is
         // Proposer and valid guardian can always cancel.
         if (
             msg.sender == _proposer
-                || (msg.sender == proposalGuardian.account && block.timestamp < proposalGuardian.expiration)
+                || (msg.sender == proposalGuardian.account && block.timestamp <= proposalGuardian.expiration)
         ) {
             return _cancel(_targets, _values, _calldatas, _descriptionHash);
         }
