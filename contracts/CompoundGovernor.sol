@@ -124,6 +124,10 @@ contract CompoundGovernor is
         if (_executor() != _msgSender()) {
             revert GovernorOnlyExecutor(_msgSender());
         }
+
+        // In GovernorBravo, proposal IDs start at 1, so its proposalCount() function is the most recent 
+        // proposal ID created. This function sets the first proposal ID for the CompoundGovernor to 1 beyond that,
+        // so the first proposal ID of compoundGovernor is one more that the last proposal ID of GovernorBravo.
         _setNextProposalId(compoundGovernorBravo.proposalCount() + 1);
     }
 
