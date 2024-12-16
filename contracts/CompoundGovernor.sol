@@ -210,18 +210,23 @@ contract CompoundGovernor is
         uint256 _proposalId = hashProposal(_targets, _values, _calldatas, _descriptionHash);
         address _proposer = proposalProposer(_proposalId);
 
-        // Check if the caller is the proposer, the proposal guardian, or if the proposalGuardian role is still valid.
+        // Proposer and valid guardian can always cancel.
         if (
-            (msg.sender != _proposer && msg.sender != proposalGuardian.account)
-                || (msg.sender == proposalGuardian.account && block.timestamp > proposalGuardian.expiration)
+            msg.sender == _proposer
+                || (msg.sender == proposalGuardian.account && block.timestamp < proposalGuardian.expiration)
         ) {
-            if (token().getPriorVotes(_proposer, block.number - 1) >= proposalThreshold()) {
-                revert Unauthorized("Proposer above proposalThreshold", msg.sender);
-            }
+            return _cancel(_targets, _values, _calldatas, _descriptionHash);
+        }
 
-            if (isWhitelisted(_proposer) && msg.sender != whitelistGuardian) {
-                revert Unauthorized("Not whitelistGuardian", msg.sender);
-            }
+        // For other cancellation attempts, check proposer's voting power.
+        bool _isProposerAboveThreshold = token().getPriorVotes(_proposer, block.number - 1) >= proposalThreshold();
+        if (_isProposerAboveThreshold) {
+            revert Unauthorized("Proposer above proposalThreshold", msg.sender);
+        }
+
+        // Check whitelist status
+        if (isWhitelisted(_proposer) && msg.sender != whitelistGuardian) {
+            revert Unauthorized("Not whitelistGuardian", msg.sender);
         }
 
         return _cancel(_targets, _values, _calldatas, _descriptionHash);
