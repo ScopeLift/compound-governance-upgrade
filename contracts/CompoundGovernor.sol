@@ -14,6 +14,7 @@ import {GovernorPreventLateQuorumUpgradeable} from "contracts/extensions/Governo
 import {IComp} from "contracts/interfaces/IComp.sol";
 import {GovernorAlphaInterface} from "contracts/GovernorBravoInterfaces.sol";
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
+import {SignatureChecker} from "@openzeppelin/contracts/utils/cryptography/SignatureChecker.sol";
 
 /// @title CompoundGovernor
 /// @author [ScopeLift](https://scopelift.co)
@@ -56,6 +57,9 @@ contract CompoundGovernor is
     /// @param caller The address that attempted the unauthorized action.
     error Unauthorized(bytes32 reason, address caller);
 
+    error SignatureExpired();
+    error InvalidSignature();
+
     /// @notice The address and expiration of the proposal guardian.
     struct ProposalGuardian {
         // Address of the `ProposalGuardian`
@@ -66,6 +70,11 @@ contract CompoundGovernor is
 
     GovernorAlphaInterface private constant compoundGovernorBravo =
         GovernorAlphaInterface(0xc0Da02939E1441F497fd74F78cE7Decb17B66529);
+
+    /// @notice The EIP-712 typehash used when encoding data for `proposeOnBehalf` calls.
+    bytes32 public constant PROPOSAL_TYPEHASH = keccak256(
+        "Proposal(address account,uint256 nonce,uint256 deadline, address[] targets,uint256[] values,bytes[] calldatas,string description)"
+    );
 
     /// @notice Address which manages whitelisted proposals and whitelist accounts.
     /// @dev This address has the ability to set account whitelist expirations and can be changed through the governance
@@ -141,8 +150,16 @@ contract CompoundGovernor is
         bytes[] memory calldatas,
         string memory description
     ) public override(GovernorUpgradeable) returns (uint256) {
-        address proposer = _msgSender();
+        return propose(targets, values, calldatas, description, _msgSender());
+    }
 
+    function propose(
+        address[] memory targets,
+        uint256[] memory values,
+        bytes[] memory calldatas,
+        string memory description,
+        address proposer
+    ) public returns (uint256) {
         // check description restriction
         if (!_isValidDescriptionForProposer(proposer, description)) {
             revert GovernorRestrictedProposer(proposer);
@@ -157,10 +174,24 @@ contract CompoundGovernor is
                     revert GovernorInsufficientProposerVotes(proposer, proposerVotes, votesThreshold);
                 }
             }
-            return _propose(targets, values, calldatas, description, proposer);
-        } else {
-            return _propose(targets, values, calldatas, description, proposer);
         }
+        return _propose(targets, values, calldatas, description, proposer);
+    }
+
+    function proposeBySig(
+        address _proposer,
+        uint256 _nonce,
+        uint256 _deadline,
+        bytes memory _signature,
+        address[] memory _targets,
+        uint256[] memory _values,
+        bytes[] memory _calldatas,
+        string memory _description
+    ) public returns (uint256) {
+        _validateSignature(
+            _proposer, _nonce, _deadline, _signature, _targets, _values, _calldatas, _description, PROPOSAL_TYPEHASH
+        );
+        return propose(_targets, _values, _calldatas, _description, _proposer);
     }
 
     function _propose(
@@ -171,6 +202,29 @@ contract CompoundGovernor is
         address proposer
     ) internal override(GovernorUpgradeable, GovernorSequentialProposalIdUpgradeable) returns (uint256) {
         return GovernorSequentialProposalIdUpgradeable._propose(targets, values, calldatas, description, proposer);
+    }
+
+    function _validateSignature(
+        address _account,
+        uint256 _nonce,
+        uint256 _deadline,
+        bytes memory _signature,
+        address[] memory _targets,
+        uint256[] memory _values,
+        bytes[] memory _calldatas,
+        string memory _description,
+        bytes32 _typeHash
+    ) internal {
+        _useCheckedNonce(_account, _nonce);
+        if (block.timestamp > _deadline) {
+            revert SignatureExpired();
+        }
+        bytes32 _structHash =
+            keccak256(abi.encode(_typeHash, _account, _nonce, _deadline, _targets, _values, _calldatas, _description));
+        bytes32 _hash = _hashTypedDataV4(_structHash);
+        if (!SignatureChecker.isValidSignatureNow(_account, _hash, _signature)) {
+            revert InvalidSignature();
+        }
     }
 
     /// @notice Cancels an active proposal.

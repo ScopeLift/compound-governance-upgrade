@@ -360,5 +360,11 @@ contract CompoundGovernorTest is Test, CompoundGovernorConstants {
         _failBravoProposal(_upgradeProposalId);
     }
 
+    function _transferTokensFromMajorDelegateToAnotherAndDelegateToSelf(address _proposer) internal {
+        address _majorDeleagte = _getRandomProposer();
+        vm.prank(_majorDeleagte);
+        token.delegate(_proposer);
+    }
+
     /* End Bravo-related helper methods */
 }

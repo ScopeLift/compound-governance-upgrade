@@ -6,8 +6,8 @@ import {IGovernor} from "contracts/extensions/IGovernor.sol";
 import {CompoundGovernor} from "contracts/CompoundGovernor.sol";
 import {GovernorCountingFractionalUpgradeable} from "contracts/extensions/GovernorCountingFractionalUpgradeable.sol";
 import {GovernorCountingSimpleUpgradeable} from "contracts/extensions/GovernorCountingSimpleUpgradeable.sol";
-
-import {console2} from "forge-std/Test.sol";
+import {Eip712Helper} from "contracts/test/helpers/Eip712Helper.sol";
+import {console2, stdStorage, StdStorage, Vm} from "forge-std/Test.sol";
 
 contract Initialize is CompoundGovernorTest {
     function test_Initialize() public view {
@@ -116,6 +116,107 @@ contract Propose is CompoundGovernorTest {
             )
         );
         _submitProposal(_proposer, _proposal);
+    }
+}
+
+abstract contract ProposeBySig is CompoundGovernorTest, Eip712Helper {
+    using stdStorage for StdStorage;
+
+    function _hashTypedDataV4(
+        bytes32 _typeHash,
+        bytes32 _structHash,
+        bytes memory _name,
+        bytes memory _version,
+        address _verifyingContract
+    ) internal view returns (bytes32) {
+        bytes32 _separator = _domainSeparator(_typeHash, _name, _version, _verifyingContract);
+        return keccak256(abi.encodePacked("\x19\x01", _separator, _structHash));
+    }
+
+    function _signFixedMessage(
+        bytes32 _typehash,
+        address _account,
+        uint256 _nonce,
+        uint256 _expiry,
+        address[] memory _targets,
+        uint256[] memory _values,
+        bytes[] memory _calldatas,
+        string memory _description,
+        uint256 _signerPrivateKey
+    ) internal view returns (bytes memory) {
+        bytes32 structHash =
+            keccak256(abi.encode(_typehash, _account, _nonce, _expiry, _targets, _values, _calldatas, _description));
+        bytes32 hash = _hashTypedDataV4(EIP712_DOMAIN_TYPEHASH, structHash, "CompoundGovernor", "1", address(governor));
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(_signerPrivateKey, hash);
+        return abi.encodePacked(r, s, v);
+    }
+
+    function _boundToValidPrivateKey(uint256 _privateKey) internal pure returns (uint256) {
+        return bound(_privateKey, 1, SECP256K1_ORDER - 1);
+    }
+
+    function _assumeFutureExpiry(uint256 _expiry) internal view {
+        vm.assume(_expiry > block.timestamp + 1);
+    }
+
+    function _setNonce(address _target, address _account, uint256 _currentNonce) internal {
+        stdstore.target(_target).sig("nonces(address)").with_key(_account).checked_write(_currentNonce);
+    }
+
+    function testFuzz_ProposesUsingASignature(
+        uint256 _proposerPrivateKey,
+        uint256 _nonce,
+        uint256 _expiry,
+        address _proposer,
+        address _sender
+    ) public {
+        Proposal memory _proposal = _buildAnEmptyProposal();
+        for (uint256 _index = 0; _index < _majorDelegates.length; _index++) {
+            vm.prank(_majorDelegates[_index]);
+            token.delegate(_proposer);
+        }
+        vm.roll(100);
+        uint256 _proposalId = _getProposalId(_proposal);
+        _setNonce(address(governor), _proposer, _nonce);
+        bytes memory signature = _signFixedMessage(
+            governor.PROPOSAL_TYPEHASH(),
+            _proposer,
+            governor.nonces(_proposer),
+            _expiry,
+            _proposal.targets,
+            _proposal.values,
+            _proposal.calldatas,
+            _proposal.description,
+            _proposerPrivateKey
+        );
+
+        vm.prank(_sender);
+        _submitProposal(_proposer, _proposal);
+        vm.assertEq(uint8(governor.state(_proposalId)), uint8(IGovernor.ProposalState.Active));
+        //     _amount = _boundToReasonableStakeTokenAmount(_amount);
+        // _stakerPrivateKey = _boundToValidPrivateKey(_stakerPrivateKey);
+        // _assumeFutureExpiry(_expiry);
+
+        // // Mint and approve tokens to the staker
+        // address _staker = vm.addr(_stakerPrivateKey);
+        // _mintStakeToken(_staker, _amount);
+        // vm.startPrank(_staker);
+        // stakeToken.approve(address(fixedLst), _amount);
+        // vm.stopPrank();
+
+        // // Sign the message
+        // _setNonce(address(fixedLst), _staker, _nonce);
+        // bytes memory signature = _signFixedMessage(
+        //   fixedLst.STAKE_TYPEHASH(), _staker, _amount, fixedLst.nonces(_staker), _expiry, _stakerPrivateKey
+        // );
+
+        // // Perform the stake on behalf
+        // vm.prank(_sender);
+        // fixedLst.stakeOnBehalf(_staker, _amount, _nonce, _expiry, signature);
+
+        // // Check balances
+        // assertEq(lst.balanceOf(_staker.fixedAlias()), _amount);
+        // assertEq(lst.sharesOf(_staker.fixedAlias()) / SHARE_SCALE_FACTOR, fixedLst.balanceOf(_staker));
     }
 }
 
