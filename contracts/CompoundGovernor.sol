@@ -135,7 +135,7 @@ contract CompoundGovernor is
         return GovernorSequentialProposalIdUpgradeable.hashProposal(_targets, _values, _calldatas, _descriptionHash);
     }
 
-    /// @notice Creates a new proposal and skips proposal threshold check for whitelisted accounts.
+    /// @notice Creates a new proposal. Skips proposal threshold check for whitelisted accounts.
     /// @param _targets An array of addresses that will be called if the proposal is executed.
     /// @param _values An array of ETH values to be sent to each address when the proposal is executed.
     /// @param _calldatas An array of calldata to be sent to each address when the proposal is executed.
