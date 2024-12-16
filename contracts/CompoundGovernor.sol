@@ -135,8 +135,7 @@ contract CompoundGovernor is
         return GovernorSequentialProposalIdUpgradeable.hashProposal(_targets, _values, _calldatas, _descriptionHash);
     }
 
-    /// @notice Creates a new proposal.
-    /// @dev This is an override of the function that skips proposal threshold check for whitelisted accounts.
+    /// @notice Creates a new proposal and skips proposal threshold check for whitelisted accounts.
     /// @param _targets An array of addresses that will be called if the proposal is executed.
     /// @param _values An array of ETH values to be sent to each address when the proposal is executed.
     /// @param _calldatas An array of calldata to be sent to each address when the proposal is executed.
@@ -231,9 +230,10 @@ contract CompoundGovernor is
     }
 
     /// @notice Sets or updates the whitelist expiration for a specific account.
-    /// @notice A whitelisted account's proposals cannot be canceled by anyone except the `whitelistGuardian` when its
-    /// voting weight falls below the `proposalThreshold`.
-    /// @notice The whitelist account and `proposalGuardian` can still cancel its proposals regardless of voting weight.
+    /// A whitelisted account can create proposals without meeting the 'proposalThreshold'.
+    /// A whitelisted account's proposals cannot be canceled by anyone except the `whitelistGuardian` and only when its
+    /// voting weight is below the `proposalThreshold`.
+    /// A whitelisted account and `proposalGuardian` can still cancel its proposals regardless of voting weight.
     /// @dev Only the executor (timelock) or the `whitelistGuardian` can call this function.
     /// @param _account The address of the account to be whitelisted.
     /// @param _expiration The timestamp until which the account will be whitelisted.
