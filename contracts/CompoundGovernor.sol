@@ -135,60 +135,75 @@ contract CompoundGovernor is
         return GovernorSequentialProposalIdUpgradeable.hashProposal(_targets, _values, _calldatas, _descriptionHash);
     }
 
+    /// @notice Creates a new proposal.
+    /// @dev This is an override of the function that skips proposal threshold check for whitelisted accounts.
+    /// @param _targets An array of addresses that will be called if the proposal is executed.
+    /// @param _values An array of ETH values to be sent to each address when the proposal is executed.
+    /// @param _calldatas An array of calldata to be sent to each address when the proposal is executed.
+    /// @param _description A human-readable description of the proposal.
+    /// @return uint256 The ID of the newly created proposal.
     function propose(
-        address[] memory targets,
-        uint256[] memory values,
-        bytes[] memory calldatas,
-        string memory description
+        address[] memory _targets,
+        uint256[] memory _values,
+        bytes[] memory _calldatas,
+        string memory _description
     ) public override(GovernorUpgradeable) returns (uint256) {
-        address proposer = _msgSender();
+        address _proposer = _msgSender();
 
         // check description restriction
-        if (!_isValidDescriptionForProposer(proposer, description)) {
-            revert GovernorRestrictedProposer(proposer);
+        if (!_isValidDescriptionForProposer(_proposer, _description)) {
+            revert GovernorRestrictedProposer(_proposer);
         }
 
-        if (!isWhitelisted(proposer)) {
+        if (!isWhitelisted(_proposer)) {
             // check proposal threshold
-            uint256 votesThreshold = proposalThreshold();
-            if (votesThreshold > 0) {
-                uint256 proposerVotes = getVotes(proposer, clock() - 1);
-                if (proposerVotes < votesThreshold) {
-                    revert GovernorInsufficientProposerVotes(proposer, proposerVotes, votesThreshold);
+            uint256 _votesThreshold = proposalThreshold();
+            if (_votesThreshold > 0) {
+                uint256 _proposerVotes = getVotes(_proposer, clock() - 1);
+                if (_proposerVotes < _votesThreshold) {
+                    revert GovernorInsufficientProposerVotes(_proposer, _proposerVotes, _votesThreshold);
                 }
             }
-            return _propose(targets, values, calldatas, description, proposer);
+            return _propose(_targets, _values, _calldatas, _description, _proposer);
         } else {
-            return _propose(targets, values, calldatas, description, proposer);
+            return _propose(_targets, _values, _calldatas, _description, _proposer);
         }
     }
 
+    /// @notice Internal function used to create a new proposal.
+    /// @dev This is an override that supports sequential proposal IDs. Called by the public `propose` function.
+    /// @param _targets An array of addresses that will be called if the proposal is executed.
+    /// @param _values An array of ETH values to be sent to each address when the proposal is executed.
+    /// @param _calldatas An array of calldata to be sent to each address when the proposal is executed.
+    /// @param _description A human-readable description of the proposal.
+    /// @param _proposer The address of the account creating the proposal.
+    /// @return uint256 The ID of the newly created proposal.
     function _propose(
-        address[] memory targets,
-        uint256[] memory values,
-        bytes[] memory calldatas,
-        string memory description,
-        address proposer
+        address[] memory _targets,
+        uint256[] memory _values,
+        bytes[] memory _calldatas,
+        string memory _description,
+        address _proposer
     ) internal override(GovernorUpgradeable, GovernorSequentialProposalIdUpgradeable) returns (uint256) {
-        return GovernorSequentialProposalIdUpgradeable._propose(targets, values, calldatas, description, proposer);
+        return GovernorSequentialProposalIdUpgradeable._propose(_targets, _values, _calldatas, _description, _proposer);
     }
 
     /// @notice Cancels an active proposal.
     /// @notice This function can be called by the proposer, the proposal guardian, or anyone if the proposer's voting
     /// power has dropped below the proposal threshold. For whitelisted proposers, only special actors (proposer,
     /// proposal guardian, whitelist guardian) can cancel if the proposer is below the threshold.
-    /// @param targets An array of addresses that will be called if the proposal is executed.
-    /// @param values An array of ETH values to be sent to each address when the proposal is executed.
-    /// @param calldatas An array of calldata to be sent to each address when the proposal is executed.
-    /// @param descriptionHash The hash of the proposal's description string.
+    /// @param _targets An array of addresses that will be called if the proposal is executed.
+    /// @param _values An array of ETH values to be sent to each address when the proposal is executed.
+    /// @param _calldatas An array of calldata to be sent to each address when the proposal is executed.
+    /// @param _descriptionHash The hash of the proposal's description string.
     /// @return uint256 The ID of the canceled proposal.
     function cancel(
-        address[] memory targets,
-        uint256[] memory values,
-        bytes[] memory calldatas,
-        bytes32 descriptionHash
+        address[] memory _targets,
+        uint256[] memory _values,
+        bytes[] memory _calldatas,
+        bytes32 _descriptionHash
     ) public override returns (uint256) {
-        uint256 _proposalId = hashProposal(targets, values, calldatas, descriptionHash);
+        uint256 _proposalId = hashProposal(_targets, _values, _calldatas, _descriptionHash);
         address _proposer = proposalProposer(_proposalId);
 
         if (msg.sender != _proposer && msg.sender != proposalGuardian.account) {
@@ -201,7 +216,7 @@ contract CompoundGovernor is
             }
         }
 
-        return _cancel(targets, values, calldatas, descriptionHash);
+        return _cancel(_targets, _values, _calldatas, _descriptionHash);
     }
 
     /// @notice Cancels a proposal given its ID.
