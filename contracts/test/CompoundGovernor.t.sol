@@ -124,8 +124,8 @@ contract Propose is CompoundGovernorTest {
         _submitProposal(_proposer, _proposal);
     }
 
-    function testFuzz_RevertIf_ProposerHasActiveProposal(uint256 _elapsedTime) public {
-        _elapsedTime = bound(_elapsedTime, 0, governor.votingDelay() + governor.votingPeriod());
+    function testFuzz_RevertIf_ProposerHasActiveProposal(uint256 _elapsedBlocks) public {
+        _elapsedBlocks = bound(_elapsedBlocks, 0, governor.votingDelay() + governor.votingPeriod());
         Proposal memory _proposal = _buildAnEmptyProposal();
         address _proposer = _getRandomProposer();
         bool _isWhitelisted = vm.randomUint() % 2 == 0;
@@ -133,7 +133,7 @@ contract Propose is CompoundGovernorTest {
             _setWhitelistedProposer(_proposer);
         }
         uint256 _proposalId = _submitProposalWithoutRoll(_proposer, _proposal);
-        skip(_elapsedTime);
+        vm.roll(vm.getBlockNumber() + _elapsedBlocks);
         vm.expectRevert(
             abi.encodeWithSelector(
                 CompoundGovernor.ProposerActiveProposal.selector, _proposer, _proposalId, governor.state(_proposalId)
