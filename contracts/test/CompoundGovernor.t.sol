@@ -435,8 +435,14 @@ abstract contract Cancel is CompoundGovernorTest {
     /// @notice Returns the current whitelistGuardian or a new whitelistGuardian if the current whitelistGuardian is the
     /// current proposalGuardian.
     /// @dev This is used to avoid test cases where whitelistGuardian should not be able to cancel a proposal.
-    function _currentOrNewWhitelistGuardian(address _newWhitelistGuardian) internal returns (address) {
+    function _currentOrNewWhitelistGuardian(address _newWhitelistGuardian, address _proposer)
+        internal
+        returns (address)
+    {
+        vm.assume(_newWhitelistGuardian != _proposer);
+        vm.assume(_newWhitelistGuardian != PROXY_ADMIN_ADDRESS);
         (address _proposalGuardian, uint256 _proposalGuardianExpiration) = governor.proposalGuardian();
+        vm.assume(_newWhitelistGuardian != _proposalGuardian);
         if (whitelistGuardian == _proposalGuardian && _proposalGuardianExpiration > block.timestamp) {
             Proposal memory _proposalToAddWhitelistGuardian = _buildSetWhitelistGuardianProposal(_newWhitelistGuardian);
             _submitPassQueueAndExecuteProposal(_getRandomProposer(), _proposalToAddWhitelistGuardian);
@@ -538,7 +544,7 @@ abstract contract Cancel is CompoundGovernorTest {
         uint256 _proposalId = _getProposalId(_proposal);
         _submitPassAndQueueProposal(_proposer, _proposal);
 
-        address _whitelistGuardian = _currentOrNewWhitelistGuardian(_newWhitelistGuardian);
+        address _whitelistGuardian = _currentOrNewWhitelistGuardian(_newWhitelistGuardian, _proposer);
         vm.prank(_whitelistGuardian);
         vm.expectRevert(
             abi.encodeWithSelector(
@@ -557,7 +563,7 @@ abstract contract Cancel is CompoundGovernorTest {
         _setWhitelistedProposer(_proposer);
         _submitPassAndQueueProposal(_proposer, _proposal);
 
-        address _whitelistGuardian = _currentOrNewWhitelistGuardian(_newWhitelistGuardian);
+        address _whitelistGuardian = _currentOrNewWhitelistGuardian(_newWhitelistGuardian, _proposer);
         vm.prank(_whitelistGuardian);
         vm.expectRevert(
             abi.encodeWithSelector(
