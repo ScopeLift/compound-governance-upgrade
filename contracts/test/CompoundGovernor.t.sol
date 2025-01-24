@@ -432,6 +432,25 @@ abstract contract Cancel is CompoundGovernorTest {
         );
     }
 
+    /// @notice Returns the current whitelistGuardian or a new whitelistGuardian if the current whitelistGuardian is the
+    /// current proposalGuardian.
+    /// @dev This is used to avoid test cases where whitelistGuardian should not be able to cancel a proposal.
+    function _currentOrNewWhitelistGuardian(address _newWhitelistGuardian, address _proposer)
+        internal
+        returns (address)
+    {
+        vm.assume(_newWhitelistGuardian != _proposer);
+        vm.assume(_newWhitelistGuardian != PROXY_ADMIN_ADDRESS);
+        (address _proposalGuardian, uint256 _proposalGuardianExpiration) = governor.proposalGuardian();
+        vm.assume(_newWhitelistGuardian != _proposalGuardian);
+        if (whitelistGuardian == _proposalGuardian && _proposalGuardianExpiration > block.timestamp) {
+            Proposal memory _proposalToAddWhitelistGuardian = _buildSetWhitelistGuardianProposal(_newWhitelistGuardian);
+            _submitPassQueueAndExecuteProposal(_getRandomProposer(), _proposalToAddWhitelistGuardian);
+            return _newWhitelistGuardian;
+        }
+        return whitelistGuardian;
+    }
+
     function test_ProposerCanCancelItsOwnProposal() public {
         address _proposer = _getRandomProposer();
         Proposal memory _proposal = _buildAnEmptyProposal();
@@ -517,32 +536,38 @@ abstract contract Cancel is CompoundGovernorTest {
         vm.assertEq(uint256(governor.state(_proposalId)), uint256(IGovernor.ProposalState.Canceled));
     }
 
-    function testFuzz_RevertIf_WhitelistGuardianCancelsNonWhitelistedProposalAboveThreshold() public {
+    function testFuzz_RevertIf_WhitelistGuardianCancelsNonWhitelistedProposalAboveThreshold(
+        address _newWhitelistGuardian
+    ) public {
         address _proposer = _getRandomProposer();
         Proposal memory _proposal = _buildAnEmptyProposal();
         uint256 _proposalId = _getProposalId(_proposal);
         _submitPassAndQueueProposal(_proposer, _proposal);
 
-        vm.prank(whitelistGuardian);
+        address _whitelistGuardian = _currentOrNewWhitelistGuardian(_newWhitelistGuardian, _proposer);
+        vm.prank(_whitelistGuardian);
         vm.expectRevert(
             abi.encodeWithSelector(
-                CompoundGovernor.Unauthorized.selector, bytes32("Proposer above proposalThreshold"), whitelistGuardian
+                CompoundGovernor.Unauthorized.selector, bytes32("Proposer above proposalThreshold"), _whitelistGuardian
             )
         );
         _cancelWithProposalDetailsOrId(_proposal, _proposalId);
     }
 
-    function testFuzz_RevertIf_WhitelistGuardianCancelsWhitelistedProposalAboveThreshold() public {
+    function testFuzz_RevertIf_WhitelistGuardianCancelsWhitelistedProposalAboveThreshold(address _newWhitelistGuardian)
+        public
+    {
         address _proposer = _getRandomProposer();
         Proposal memory _proposal = _buildAnEmptyProposal();
         uint256 _proposalId = _getProposalId(_proposal);
         _setWhitelistedProposer(_proposer);
         _submitPassAndQueueProposal(_proposer, _proposal);
 
-        vm.prank(whitelistGuardian);
+        address _whitelistGuardian = _currentOrNewWhitelistGuardian(_newWhitelistGuardian, _proposer);
+        vm.prank(_whitelistGuardian);
         vm.expectRevert(
             abi.encodeWithSelector(
-                CompoundGovernor.Unauthorized.selector, bytes32("Proposer above proposalThreshold"), whitelistGuardian
+                CompoundGovernor.Unauthorized.selector, bytes32("Proposer above proposalThreshold"), _whitelistGuardian
             )
         );
         _cancelWithProposalDetailsOrId(_proposal, _proposalId);
@@ -796,23 +821,6 @@ contract SetWhitelistAccountExpiration is CompoundGovernorTest {
 }
 
 contract CompoundGovernorSetWhitelistGuardianTest is CompoundGovernorTest {
-    function _buildSetWhitelistGuardianProposal(address _whitelistGuardian)
-        private
-        view
-        returns (Proposal memory _proposal)
-    {
-        address[] memory _targets = new address[](1);
-        _targets[0] = address(governor);
-
-        uint256[] memory _values = new uint256[](1);
-        _values[0] = 0;
-
-        bytes[] memory _calldatas = new bytes[](1);
-        _calldatas[0] = abi.encodeWithSelector(CompoundGovernor.setWhitelistGuardian.selector, _whitelistGuardian);
-
-        _proposal = Proposal(_targets, _values, _calldatas, "Set New whitelistGuardian");
-    }
-
     function testFuzz_SetsWhitelistGuardianAsTimelock(address _whitelistGuardian) public {
         Proposal memory _proposal = _buildSetWhitelistGuardianProposal(_whitelistGuardian);
         _submitPassQueueAndExecuteProposal(_getRandomProposer(), _proposal);

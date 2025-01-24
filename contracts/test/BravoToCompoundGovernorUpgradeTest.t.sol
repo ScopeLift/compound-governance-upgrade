@@ -54,19 +54,36 @@ abstract contract BravoToCompoundGovernorUpgradeTest is CompoundGovernorTest {
     }
 }
 
-contract PreUpgradeTest is BravoToCompoundGovernorUpgradeTest {
+contract PreDeployUpgradeTest is BravoToCompoundGovernorUpgradeTest {
     function setUp() public virtual override {
         super.setUp();
     }
 
     function _useDeployedCompoundGovernor() internal pure override returns (bool) {
-        // returning false indicates that a new CompoundGovernor should be deployed before the inherited tests are run.
+        // returning false indicates that a new CompoundGovernor should be deployed in setUp before the inherited tests are run.
         return false;
     }
 
     function _shouldPassAndExecuteUpgradeProposal() internal pure override returns (bool) {
-        // returning false indicates the upgrade proposal should not be passed and executed before the inherited tests
-        // are run.
+        // returning false indicates the upgrade proposal should not be passed and executed in setUp before the inherited tests
+        // are run. False is returned here because the upgrade proposal will be tested here.
+        return false;
+    }
+}
+
+contract PostDeployUpgradeTest is BravoToCompoundGovernorUpgradeTest {
+    function setUp() public virtual override {
+        super.setUp();
+    }
+
+    function _useDeployedCompoundGovernor() internal pure override returns (bool) {
+        // returning true indicates that a CompoundGovernor is deployed in setUp and should be used as the inherited tests are run.
+        return true;
+    }
+
+    function _shouldPassAndExecuteUpgradeProposal() internal pure override returns (bool) {
+        // returning false indicates the upgrade proposal should not be passed and executed in setUp before the inherited tests
+        // are run. False is returned here because the upgrade proposal will be tested here.
         return false;
     }
 }
