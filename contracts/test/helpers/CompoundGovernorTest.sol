@@ -67,7 +67,7 @@ contract CompoundGovernorTest is Test, CompoundGovernorConstants {
     }
 
     function _useDeployedCompoundGovernor() internal pure virtual returns (bool) {
-        return false;
+        return true;
     }
 
     function _shouldPassAndExecuteUpgradeProposal() internal pure virtual returns (bool) {
@@ -99,6 +99,23 @@ contract CompoundGovernorTest is Test, CompoundGovernorConstants {
         uint256[] memory _values = new uint256[](1);
         bytes[] memory _calldatas = new bytes[](1);
         _proposal = Proposal(_targets, _values, _calldatas, "An Empty Proposal");
+    }
+
+    function _buildSetWhitelistGuardianProposal(address _whitelistGuardian)
+        internal
+        view
+        returns (Proposal memory _proposal)
+    {
+        address[] memory _targets = new address[](1);
+        _targets[0] = address(governor);
+
+        uint256[] memory _values = new uint256[](1);
+        _values[0] = 0;
+
+        bytes[] memory _calldatas = new bytes[](1);
+        _calldatas[0] = abi.encodeWithSelector(CompoundGovernor.setWhitelistGuardian.selector, _whitelistGuardian);
+
+        _proposal = Proposal(_targets, _values, _calldatas, "Set New whitelistGuardian");
     }
 
     function _assumeSafeReceiver(address _to) public pure {

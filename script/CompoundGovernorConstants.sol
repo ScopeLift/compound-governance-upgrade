@@ -18,7 +18,7 @@ contract CompoundGovernorConstants {
     address payable constant TIMELOCK_ADDRESS = payable(0x6d903f6003cca6255D85CcA4D3B5E5146dC33925);
 
     // The address of the proxy admin
-    address constant PROXY_ADMIN_ADDRESS = 0xa7A28B68B1e873eec633E1250ef78A4ef90b91AD;
+    address constant PROXY_ADMIN_ADDRESS = 0x725ED7F44F0888aeC1b7630AB1ACdced91E0591A;
     address constant COMMUNITY_MULTISIG_ADDRESS = 0xbbf3f1421D886E9b2c5D716B5192aC998af2012c; // Current proposal
         // guardian.
 
