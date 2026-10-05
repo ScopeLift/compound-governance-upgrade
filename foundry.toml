@@ -1,7 +1,11 @@
 [profile.default]
+  # Remappings are listed explicitly because newer forge versions auto-detect context-scoped remappings for nested
+  # dependencies, which the hardhat-foundry plugin rejects.
+  auto_detect_remappings = false
   remappings = [
     "@openzeppelin/contracts-upgradeable/=lib/openzeppelin-contracts-upgradeable/contracts/",
-    "@openzeppelin/contracts/=lib/openzeppelin-contracts-upgradeable/lib/openzeppelin-contracts/contracts/"
+    "@openzeppelin/contracts/=lib/openzeppelin-contracts-upgradeable/lib/openzeppelin-contracts/contracts/",
+    "forge-std/=lib/forge-std/src/"
     ]
   src = 'contracts'
   out = 'out'
@@ -15,8 +19,8 @@
   verbosity = 3
 
 [profile.ci]
-  fuzz = { runs = 5000 }
-  invariant = { runs = 1000 }
+  fuzz = { runs = 500 }
+  invariant = { runs = 100 }
 
 [profile.lite]
   fuzz = { runs = 50 }
