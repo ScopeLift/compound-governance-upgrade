@@ -22,11 +22,18 @@
   fuzz = { runs = 500 }
   invariant = { runs = 100 }
 
+[profile.deploy]
+  # Matches the compiler settings of the CompoundGovernor implementation deployed on mainnet.
+  optimizer_runs = 800
+
 [profile.lite]
   fuzz = { runs = 50 }
   invariant = { runs = 10 }
   # Speed up compilation and tests during development.
   optimizer = false
+
+[rpc_endpoints]
+  sepolia = "${SEPOLIA_RPC_URL}"
 
 [invariant]
   call_override = false
@@ -53,6 +60,7 @@
     "contracts/GovernorBravo*.sol",
     "contracts/SafeMath.sol",
     "contracts/Timelock.sol",
+    "contracts/testnet/TestnetTimelock.sol",
     "contracts/test/GovernorAlpha.sol",
     "contracts/test/Multicall.sol"
   ]
