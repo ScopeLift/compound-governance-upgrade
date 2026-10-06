@@ -85,6 +85,7 @@ contract Propose is CompoundGovernorTest {
     }
 
     function testFuzz_WhitelistedAccountCanProposeBelowThreshold(address _proposer) public {
+        vm.assume(_proposer != PROXY_ADMIN_ADDRESS);
         Proposal memory _proposal = _buildAnEmptyProposal();
         _setWhitelistedProposer(_proposer);
         uint256 _proposalId = _getProposalId(_proposal);
@@ -143,6 +144,7 @@ contract Propose is CompoundGovernorTest {
     }
 
     function testFuzz_RevertIf_NonWhitelistedProposerIsBelowThreshold(address _proposer) public {
+        vm.assume(_proposer != PROXY_ADMIN_ADDRESS);
         vm.assume(governor.getVotes(_proposer, vm.getBlockNumber() - 1) < governor.proposalThreshold());
         Proposal memory _proposal = _buildAnEmptyProposal();
 
@@ -161,6 +163,7 @@ contract Propose is CompoundGovernorTest {
         address _proposer,
         uint256 _timeElapsedAfterAccountExpiry
     ) public {
+        vm.assume(_proposer != PROXY_ADMIN_ADDRESS);
         _timeElapsedAfterAccountExpiry = bound(_timeElapsedAfterAccountExpiry, 0, type(uint96).max);
         vm.assume(governor.getVotes(_proposer, vm.getBlockNumber() - 1) < governor.proposalThreshold());
         _setWhitelistedProposer(_proposer);
