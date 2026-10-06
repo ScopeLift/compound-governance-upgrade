@@ -11,6 +11,7 @@ on:
 env:
   FOUNDRY_PROFILE: ci
   RPC_URL: ${{ secrets.RPC_URL }}
+  SEPOLIA_RPC_URL: ${{ secrets.SEPOLIA_RPC_URL }}
 
 jobs:
   test:
