@@ -15,12 +15,18 @@ import {
 } from "@nomicfoundation/hardhat-network-helpers";
 
 describe("ForkTestSimulateUpgrade", function () {
+  // The last mainnet block before GovernorBravo's proposal guardian was set.
+  // These tests upgrade GovernorBravo through a Bravo proposal, which only
+  // works while Bravo is still the Timelock's admin, and the proposal guardian
+  // test expects no guardian to be set yet.
+  const FORK_BLOCK = 20_547_380;
+
   // Update the implementation of GovernorBravo before each test
   async function deployFixtures() {
     if (process.env.RPC_URL === undefined) {
       throw new Error("RPC_URL is undefined");
     }
-    await reset(process.env.RPC_URL);
+    await reset(process.env.RPC_URL, FORK_BLOCK);
 
     const comp = await ethers.getContractAt(
       "Comp",
